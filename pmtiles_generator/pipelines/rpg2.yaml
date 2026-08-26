@@ -1,0 +1,97 @@
+name: RPG2 (private S3 shapefiles) to PMTiles
+
+# Usage (recommandé — passe MILLESIME et gère le workspace automatiquement) :
+#   ./run.sh rpg2 2024
+#
+# Sans upload S3 :
+#   ./run.sh rpg2 2024 --target build-pmtiles
+#
+# Appel tylt direct (MILLESIME doit être ajouté à un fichier env, --env n'existe pas) :
+#   tylt run pipelines/rpg2.yaml --env-file .env --workspace rpg-rpg2-2024
+#
+# Exporter le PMTiles en local :
+#   tylt export rpg-rpg2-2024 build-pmtiles ./output/
+#
+# Source : shapefiles RPG "surfaces graphiques constatées", découpés par
+# département, stockés sur S3 (bucket S3_SOURCE_BUCKET). Voir AGENTS.md.
+
+steps:
+  # ── 1. Setup ────────────────────────────────────────────────────────────────
+  # Valide MILLESIME et S3_SOURCE_BUCKET, lit les zooms tippecanoe (partagés
+  # avec config.yaml), écrit /output/config.env.
+  - id: setup
+    uses: shell
+    allowNetwork: true
+    with:
+      image: alpine:3.19
+      run: apk add --no-cache yq -q && sh /app/setup.sh
+    mounts:
+      - host: ../scripts/rpg2/setup.sh
+        container: /app/setup.sh
+      - host: ../config.yaml
+        container: /config.yaml
+
+  # ── 2. Discover ─────────────────────────────────────────────────────────────
+  # Liste s3://$S3_SOURCE_BUCKET/$MILLESIME/couches_graphiques/ et sélectionne
+  # le dossier daté correspondant au pattern attendu (exclut la variante -DEPT).
+  - id: discover
+    uses: shell
+    allowNetwork: true
+    with:
+      packages: [awscli]
+      run: bash /app/discover.sh
+    mounts:
+      - host: ../scripts/sources/private-s3/discover.sh
+        container: /app/discover.sh
+    inputs:
+      - step: setup
+
+  # ── 3. Download ─────────────────────────────────────────────────────────────
+  # Synchronise les shapefiles départementaux (.shp/.shx/.dbf/.prj/.cpg) depuis S3.
+  - id: download
+    uses: shell
+    allowNetwork: true
+    with:
+      packages: [awscli]
+      run: bash /app/download.sh
+    mounts:
+      - host: ../scripts/sources/private-s3/download.sh
+        container: /app/download.sh
+    inputs:
+      - step: setup
+      - step: discover
+
+  # ── 4. Convert ──────────────────────────────────────────────────────────────
+  # Fusionne les shapefiles départementaux (EPSG:2154) en un schéma unifié,
+  # dérive code_group depuis inertia/data/cultures.json, exporte parcelles.fgb
+  # et parcellesbio.fgb (EPSG:4326, où bio = 1).
+  - id: convert
+    uses: shell
+    with:
+      image: ghcr.io/osgeo/gdal:ubuntu-small-latest
+      packages: [jq]
+      run: bash /app/convert.sh
+    mounts:
+      - host: ../scripts/formats/shapefile/convert.sh
+        container: /app/convert.sh
+      - host: ../cultures.json
+        container: /app/cultures.json
+    inputs:
+      - step: download
+
+  # ── 5. Build PMTiles ─────────────────────────────────────────────────────────
+  # Assemble tous les FlatGeobuf en un seul PMTiles multi-layers avec tippecanoe.
+  # Sortie : {MILLESIME}/parcelles_france.pmtiles
+  - id: build-pmtiles
+    uses: build-pmtiles
+    inputs:
+      - step: convert
+      - step: setup
+
+  # ── 6. Upload ────────────────────────────────────────────────────────────────
+  # Envoie le PMTiles vers le bucket S3 de destination (S3_BUCKET).
+  - id: upload
+    uses: upload
+    inputs:
+      - step: build-pmtiles
+      - step: setup

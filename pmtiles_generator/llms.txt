@@ -1,0 +1,106 @@
+# RPG → PMTiles
+
+Générateur multi-sources de pipelines Tylt (moteur d'exécution conteneurisé) pour produire un
+fichier PMTiles multi-couches à partir du Registre Parcellaire Graphique (RPG) français. Chaque
+pipeline vit dans `pipelines/<pipeline>.yaml` et compose des scripts selon deux axes indépendants :
+la **source** (`scripts/sources/<source>/` — comment les données sont récupérées : HTTP public vs
+S3 privé) et le **format** (`scripts/formats/<format>/` — comment les données sont converties en
+FlatGeobuf : GeoPackage vs Shapefile), plus un `scripts/<pipeline>/setup.sh` propre à chaque
+pipeline pour la résolution de config. Toutes les pipelines partagent la fin commune
+(build-pmtiles/upload) via des kits Tylt (`kits/`), et se lancent via `./run.sh <pipeline> <MILLESIME>`.
+
+Pipelines actuelles : `rpg1` (source `open-data` : archives GeoPackage IGN/Géoportail ; format
+`gpkg`) et `rpg2` (source `private-s3` : shapefiles départementaux depuis S3 privé, dataset
+"surfaces graphiques constatées" ; format `shapefile`).
+
+## Pipeline rpg1 (pipelines/rpg1.yaml)
+
+1. Lit `config.yaml` (`sources.open_data.millesimes`) pour résoudre l'URL de téléchargement selon le millésime demandé (ex. 2024).
+2. Détecte si l'archive est un fichier unique `.7z` ou multi-parties `.7z.001 / .7z.002 / …`.
+3. Télécharge toutes les parties en parallèle.
+4. Extrait l'archive avec 7zip.
+5. Récupère le GeoPackage RPG BIO : depuis l'extraction IGN si présent, sinon via l'API data.gouv.fr.
+6. Convertit chaque couche GeoPackage (EPSG:2154 LAMB93) en FlatGeobuf (EPSG:4326 WGS84) via GDAL/ogr2ogr.
+7. Assemble un PMTiles multi-couches avec tippecanoe (zoom 5–14 par défaut, config partagée).
+8. Envoie le fichier PMTiles vers un bucket S3 compatible (Scaleway, AWS…).
+
+## Fichiers clés
+
+- `run.sh` — point d'entrée unique : `./run.sh <pipeline> <MILLESIME> [args tylt]`
+- `pipelines/rpg1.yaml` / `pipelines/rpg2.yaml` — définitions Tylt par pipeline
+- `config.yaml` — `tippecanoe` (partagé) + `sources.<source>.*` (config par source de données : millésimes/URLs pour `open_data`, vide pour `private_s3`)
+- `kits/build-pmtiles.js` / `kits/upload.js` — kits Tylt locaux partagés par toutes les pipelines (auto-découverts depuis `kits/<name>.js`, référencés via `uses: build-pmtiles` / `uses: upload`)
+- `.env.example` — variables S3 : S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_SOURCE_BUCKET (rpg2) — MILLESIME et S3_KEY sont injectés dynamiquement par `run.sh`
+- `scripts/common/build.sh` / `scripts/common/upload.sh` — scripts partagés montés par les kits
+- `scripts/rpg1/setup.sh` — lit config.yaml (yq) et écrit config.env
+- `scripts/sources/open-data/discover.sh` — sonde l'URL base pour détecter archive unique vs multi-parties
+- `scripts/sources/open-data/download.sh` — téléchargement parallèle avec curl
+- `scripts/sources/open-data/fetch-bio.sh` — récupère le GeoPackage RPG BIO (extraction IGN ou API data.gouv.fr en fallback)
+- `scripts/formats/gpkg/convert.sh` — PAC GPKG trouvé par glob (`*_pac*.gpkg`) → `parcelles.fgb` ; BIO GPKG depuis chemin fixe (`bio.gpkg`) → `parcellesbio.fgb` ; nom de couche interne lu via `ogrinfo` ; normalisation des noms de champs en minuscules
+
+## Couches PMTiles produites
+
+- `parcelles` — parcelles agricoles PAC (couche principale)
+- `parcellesbio` — parcelles bio
+
+## Commandes principales
+
+```bash
+# Pipeline complet
+./run.sh rpg1 2024
+./run.sh rpg2 2024
+
+# Sans upload S3
+./run.sh rpg1 2024 --target build-pmtiles
+
+# Forcer le re-téléchargement
+./run.sh rpg1 2024 --force download
+
+# Exporter le PMTiles en local
+tylt export rpg-rpg1-2024 build-pmtiles ./output/
+
+# Appel tylt direct (pas de flag --pipeline ni --env : fichier positionnel, --env-file uniquement)
+tylt run pipelines/rpg1.yaml --env-file .env --workspace rpg-rpg1-2024
+```
+
+## Technologies utilisées
+
+- **Tylt** — moteur de pipeline conteneurisé (workspaces, caching, fingerprinting, kits)
+- **Docker** — conteneurs pour chaque étape (alpine, osgeo/gdal, ubuntu:latest avec tippecanoe installé via apt)
+- **yq / jq** — résolution de config YAML et filtrage JSON (API data.gouv.fr, mapping code_group)
+- **GDAL/ogr2ogr** — conversion de formats géospatiaux
+- **tippecanoe** — génération de tuiles vectorielles PMTiles
+- **7zip** — extraction d'archives (pipeline rpg1)
+- **awscli** — upload S3, et lecture S3 (pipeline rpg2)
+
+## Pipeline rpg2 (pipelines/rpg2.yaml)
+
+Source alternative : shapefiles RPG "surfaces graphiques constatées", découpés par département
+(99 fichiers `.shp`/`.shx`/`.dbf`/`.prj`/`.cpg`), lus depuis un bucket S3 privé (`S3_SOURCE_BUCKET`,
+même compte que le bucket de destination `S3_BUCKET`, bucket différent) au lieu des archives
+GeoPackage IGN. Les étapes `build-pmtiles` et `upload` sont les mêmes kits partagés
+(`kits/build-pmtiles.js`, `kits/upload.js`) qu'avec la pipeline rpg1.
+
+Étapes : `setup` (alpine+yq) → `discover` (debian+awscli, trouve le dossier daté du millésime
+sur S3) → `download` (debian+awscli, `aws s3 sync`) → `convert` (osgeo/gdal+jq, fusionne les
+99 shapefiles en un GeoPackage temporaire puis exporte `parcelles.fgb`/`parcellesbio.fgb`) →
+`build-pmtiles` → `upload`.
+
+Points clés :
+- `code_group` (1-28) est dérivé de `CODE_CULTU` via un `CASE` SQL généré à l'exécution avec
+  `jq` depuis `inertia/data/cultures.json` (mapping code RPG → groupCode), monté en lecture
+  seule dans l'étape `convert`.
+- `id_parcel` = `PACAGE-NUM_ILOT-NUM_PARCEL` (pas d'identifiant unique dans le schéma source).
+- La couche `parcellesbio` est le sous-ensemble où le champ `BIO` (0/1) du shapefile vaut 1 —
+  pas de fetch séparé comme pour la pipeline rpg1.
+
+Commande : `./run.sh rpg2 2024`
+
+## Ajouter une nouvelle source
+
+Créer `pipelines/<pipeline>.yaml` (steps via `uses: shell`, tail via `uses: build-pmtiles` /
+`uses: upload`), en composant `scripts/sources/<source>/*.sh` (accès réseau, réutiliser si la
+source existe déjà) et `scripts/formats/<format>/convert.sh` (doit produire
+`/output/parcelles.fgb`, réutiliser si le format existe déjà) + un `scripts/<pipeline>/setup.sh`
+propre. Si besoin, ajouter `sources.<source>` dans `config.yaml`. `run.sh` route automatiquement
+vers `pipelines/<pipeline>.yaml` — aucune autre modification nécessaire. Détails dans `AGENTS.md`.

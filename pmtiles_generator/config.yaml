@@ -1,0 +1,48 @@
+# Configuration RPG → PMTiles
+# Millésime passé via --env-file .env (variable MILLESIME)
+
+# Options tippecanoe — partagées par toutes les sources.
+tippecanoe:
+  min_zoom: 5
+  max_zoom: 13
+
+# Configuration spécifique à chaque source (pipelines/<source>.yaml).
+sources:
+  # ── open_data : archives GeoPackage IGN/Géoportail (HTTP public) ─────────────
+  open_data:
+    millesimes:
+      '2024':
+        version: '3-0'
+        base_url: 'https://data.geopf.fr/telechargement/download/RPG/RPG_3-0__GPKG_LAMB93_FXX_2024-01-01/RPG_3-0__GPKG_LAMB93_FXX_2024-01-01'
+      '2023':
+        version: '2-2'
+        base_url: 'https://data.geopf.fr/telechargement/download/RPG/RPG_2-2__GPKG_LAMB93_FXX_2023-01-01/RPG_2-2__GPKG_LAMB93_FXX_2023-01-01'
+      '2022':
+        version: '2-0'
+        base_url: 'https://data.geopf.fr/telechargement/download/RPG/RPG_2-0__GPKG_LAMB93_FXX_2022-01-01/RPG_2-0__GPKG_LAMB93_FXX_2022-01-01'
+      '2021':
+        version: '2-0'
+        base_url: 'https://data.geopf.fr/telechargement/download/RPG/RPG_2-0__GPKG_LAMB93_FXX_2021-01-01/RPG_2-0__GPKG_LAMB93_FXX_2021-01-01'
+      '2020':
+        version: '2-0'
+        base_url: 'https://data.geopf.fr/telechargement/download/RPG/RPG_2-0__GPKG_LAMB93_FR_2020-01-01/RPG_2-0__GPKG_LAMB93_FR_2020-01-01'
+
+    # Source RPG BIO de secours (si absent de l'étape fetch-bio quand le millésime RPG ne contient pas de couche BIO.
+    # Dataset data.gouv.fr : "Parcelles en agriculture biologique (AB) déclarées à la PAC"
+    # Disponible pour les millésimes 2019–2023, formats GPKG (2021+) et SHP (2019-2020).
+    # L'API est interrogée dynamiquement à l'exécution :
+    #   https://www.data.gouv.fr/api/1/datasets/616d6531c2951bbe8bd97771/
+    bio_fallback_dataset: '616d6531c2951bbe8bd97771'
+
+    # Mapping : nom de table GeoPackage → nom de source-layer dans le PMTiles
+    # Seuls RPG PAC et RPG BIO sont traités (les autres layers sont ignorés).
+    #
+    # Couche GeoPackage (exemple 2024)   → source-layer PMTiles
+    # ──────────────────────────────────────────────────────────
+    # *pac* / *parcelles_agricoles*      → parcelles        (couche principale, RPG PAC)
+    # *bio*                              → parcellesbio     (RPG BIO)
+
+  # ── private_s3 : shapefiles départementaux depuis S3 privé ───────────────────
+  # Pas de config par millésime nécessaire : le préfixe S3 est découvert
+  # dynamiquement (voir scripts/sources/private-s3/discover.sh).
+  private_s3: {}

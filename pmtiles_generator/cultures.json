@@ -1,0 +1,4790 @@
+[
+  {
+    "code": "BR",
+    "label": "Bâtiments",
+    "startingYear": 2014,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "EL",
+    "label": "Eléments naturels non admissibles",
+    "startingYear": 2014,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "NE",
+    "label": "Surface agricole temporairement non exploitée",
+    "startingYear": 2014,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VF",
+    "label": "Vanille verte",
+    "startingYear": 2014,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YY",
+    "label": "Ylang-ylang",
+    "startingYear": 2014,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LQ",
+    "label": "Nvelles surf. légumin. fourrag. (luz.",
+    "startingYear": 2010,
+    "endingYear": 2012,
+    "groupCode": null
+  },
+  {
+    "code": "LR",
+    "label": "Lupin doux semé tardivement (après le 31/05)",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MC",
+    "label": "Maraîchage commercialisé (hors serres et tunnels fixes)",
+    "startingYear": 2010,
+    "endingYear": 2010,
+    "groupCode": null
+  },
+  {
+    "code": "MH",
+    "label": "Moha",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MN",
+    "label": "Melon commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MR",
+    "label": "Maraîchage (hors serres et tunnels fixes)",
+    "startingYear": 2010,
+    "endingYear": 2010,
+    "groupCode": null
+  },
+  {
+    "code": "NA",
+    "label": "Navet commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "NB",
+    "label": "Navette commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "NC",
+    "label": "Noix commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "NO",
+    "label": "Noisettes commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "NT",
+    "label": "Navette",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "NV",
+    "label": "Navet",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "OC",
+    "label": "Oignon commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "OE",
+    "label": "Oeillette",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "OR",
+    "label": "Poireau",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "OT",
+    "label": "Oeillette commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "OV",
+    "label": "Oliveraie commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "P1",
+    "label": "Pommes de terre de consommation commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "P2",
+    "label": "Pommes de terre féculières commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "P3",
+    "label": "Plants de pomme de terre commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "P4",
+    "label": "Plantes à parfum",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "P5",
+    "label": "Plantes à parfum",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "P6",
+    "label": "Pistaches commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "P7",
+    "label": "Pois chiches commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "P8",
+    "label": "Pois d'hiver commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "P9",
+    "label": "Pois de printemps commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PB",
+    "label": "Persil",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PD",
+    "label": "Poireau commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PJ",
+    "label": "Petits pois commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PV",
+    "label": "Plantes à parfum",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PW",
+    "label": "Plantes médicinales",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PY",
+    "label": "Persil commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "R3",
+    "label": "Semences de riz - grains longs commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "R4",
+    "label": "Semences de riz - grains courts commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "RT",
+    "label": "Riz semé tardivement (après le 30/06)",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "SC",
+    "label": "Salade commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "SJ",
+    "label": "Soja commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "SL",
+    "label": "Salade",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "TC",
+    "label": "Tomates de consommation",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "TD",
+    "label": "Tabac commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "TI",
+    "label": "Taillis courte rotation",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "TN",
+    "label": "Tomates de consommation commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "TS",
+    "label": "Tournesol commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VC",
+    "label": "Vergers commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VD",
+    "label": "Vesces commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VG",
+    "label": "Vignes",
+    "startingYear": 2010,
+    "endingYear": 2010,
+    "groupCode": null
+  },
+  {
+    "code": "VN",
+    "label": "Vignes commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2010,
+    "groupCode": null
+  },
+  {
+    "code": "A1",
+    "label": "Autres protéagineux commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "A2",
+    "label": "Pois de printemps semé tardivement (après le 31/05)",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AA",
+    "label": "Ail commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AD",
+    "label": "Amandes commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AE",
+    "label": "Autres oléagineux commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AH",
+    "label": "Avoine hiver",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AI",
+    "label": "Ail",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AP",
+    "label": "Avoine printemps",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AS",
+    "label": "Autres semences de céréales commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BG",
+    "label": "Blé dur printemps semé tardivement (après le 31/05)",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BI",
+    "label": "Betterave non fourragère commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BT",
+    "label": "Betterave non fourragère",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "C1",
+    "label": "Châtaigneraie entretenue par des porcins (Corse)",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "C2",
+    "label": "Chênaie entretenue par des porcins (Corse)",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "C3",
+    "label": "Colza de printemps commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "C4",
+    "label": "Chanvre oléagineux commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "C5",
+    "label": "Chanvre sans contrat commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "CB",
+    "label": "Carotte commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CC",
+    "label": "Chou",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CD",
+    "label": "Céleri commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CE",
+    "label": "Chicorée commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CJ",
+    "label": "Chou commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CK",
+    "label": "Chicorée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CL",
+    "label": "Céleri",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CN",
+    "label": "Caroubes commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CQ",
+    "label": "Châtaignes commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CS",
+    "label": "Colza d'hiver commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CT",
+    "label": "Carotte",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CY",
+    "label": "Semences de chanvre commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "DS",
+    "label": "Fourrages déshydratés commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "EC",
+    "label": "Endive commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "ET",
+    "label": "Semences d'épeautre commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "F1",
+    "label": "Prairie permanente production foin commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "F2",
+    "label": "Prairie temporaire production foin commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "F3",
+    "label": "Prairie temporaire plus de 5 ans prod. foin commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FB",
+    "label": "Fleurs annuelles",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FC",
+    "label": "Fleurs annuelles commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FD",
+    "label": "Protéagineux fourragers commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FF",
+    "label": "Féveroles commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FG",
+    "label": "Autres fruits et légumes commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FH",
+    "label": "Féveroles semées tardivemt (après le 31/05) commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FI",
+    "label": "Fourrage annuel",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FL",
+    "label": "Féveroles",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FM",
+    "label": "Fèves commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FT",
+    "label": "Féveroles semées tardivement (après le 31/05)",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FV",
+    "label": "Fèves",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "GA",
+    "label": "Gel annuel",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "GF",
+    "label": "Gel fixe",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "GS",
+    "label": "Gel spécifique (jachère faune sauvage",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "HA",
+    "label": "Haricot",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "HB",
+    "label": "Houblon commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "HI",
+    "label": "Haricot commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "I2",
+    "label": "Pois de printemps semé tardivemt (après 31/05) commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LA",
+    "label": "Lavande",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LB",
+    "label": "Semences de lin fibres commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "LF",
+    "label": "Nvelles surf. légumin. fourrag. (luzerne)",
+    "startingYear": 2010,
+    "endingYear": 2012,
+    "groupCode": null
+  },
+  {
+    "code": "LG",
+    "label": "Légumes de plein champ commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LH",
+    "label": "Lentilles commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LJ",
+    "label": "Lin non textile commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LK",
+    "label": "Lupin doux commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LL",
+    "label": "Lupin doux semé tardivement (après le 31/05) commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LM",
+    "label": "Lin fibres sans contrat commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "LO",
+    "label": "Semences de lin oléagineux commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "BDH",
+    "label": "Blé dur d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "PPR",
+    "label": "Pois protéagineux de printemps (alimentation animale)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "MEL",
+    "label": "Autre mélilot",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "CSS",
+    "label": "Culture sous serre hors sol",
+    "startingYear": 2016,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "SNA",
+    "label": "Surface non agricole non visible sur l'orthophoto",
+    "startingYear": 2015,
+    "endingYear": 2015,
+    "groupCode": "28"
+  },
+  {
+    "code": "BOR",
+    "label": "Bordure de champ",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "FF6",
+    "label": "Féverole fourragère implantée pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "GER",
+    "label": "Géranium",
+    "startingYear": 2016,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "JO6",
+    "label": "Jarosse implantée pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "LH6",
+    "label": "Lupin fourrager d'hiver implanté pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "LP6",
+    "label": "Lupin fourrager de printemps implanté pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "LU6",
+    "label": "Luzerne implantée pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "MC6",
+    "label": "Mélange de légumineuses fourragères prépondérantes au semis implantées pour la récolte 2016 et de céréales",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "ME6",
+    "label": "Mélilot implanté pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "MH6",
+    "label": "Mélange de légumineuses fourragères prépondérantes au semis implantées pour la récolte 2016 et d'herbacées ou de graminées fourragères",
+    "startingYear": 2016,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "ML6",
+    "label": "Mélange de légumineuses fourragères implantées pour la récolte 2016 (entre elles)",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "PH6",
+    "label": "Pois fourrager d'hiver implanté pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "PP6",
+    "label": "Pois fourrager de printemps implanté pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "PSN",
+    "label": "Psyllium noir de Provence",
+    "startingYear": 2016,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "SA6",
+    "label": "Sainfoin implanté pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "SE6",
+    "label": "Serradelle implantée pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "TR6",
+    "label": "Trèfle implanté pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "VE6",
+    "label": "Vesce implantée pour la récolte 2016",
+    "startingYear": 2016,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "VGD",
+    "label": "Verger (DOM)",
+    "startingYear": 2016,
+    "endingYear": 2022,
+    "groupCode": "20"
+  },
+  {
+    "code": "ACA",
+    "label": "Autre culture non précisée dans la liste (admissible)",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "28"
+  },
+  {
+    "code": "AGR",
+    "label": "Agrume",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "AIL",
+    "label": "Ail",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "ANA",
+    "label": "Ananas",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "ANE",
+    "label": "Aneth",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "ANG",
+    "label": "Angélique",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "ANI",
+    "label": "Anis",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "ARA",
+    "label": "Arachide",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "7"
+  },
+  {
+    "code": "ART",
+    "label": "Artichaut",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "AUB",
+    "label": "Aubergine",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "AVH",
+    "label": "Avoine d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "AVO",
+    "label": "Avocat",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "20"
+  },
+  {
+    "code": "AVP",
+    "label": "Avoine de printemps",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "BAR",
+    "label": "Bardane",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "BAS",
+    "label": "Basilic",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "BCA",
+    "label": "Banane (hors export)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "BCF",
+    "label": "Banane créole (fruit et légume) - fermage",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "20"
+  },
+  {
+    "code": "BCI",
+    "label": "Banane créole (fruit et légume) - indivision",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "20"
+  },
+  {
+    "code": "BCP",
+    "label": "Banane créole (fruit et légume) - propriété ou faire valoir direct",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "20"
+  },
+  {
+    "code": "BCR",
+    "label": "Banane créole (fruit et légume) - réforme foncière",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "20"
+  },
+  {
+    "code": "BDP",
+    "label": "Blé dur de printemps",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "BDT",
+    "label": "Blé dur de printemps semé tardivement (après le 31/05)",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "4"
+  },
+  {
+    "code": "BEA",
+    "label": "Banane export - autre",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "20"
+  },
+  {
+    "code": "BEF",
+    "label": "Banane (export)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "BEI",
+    "label": "Banane export - indivision",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "20"
+  },
+  {
+    "code": "BEP",
+    "label": "Banane export - propriété ou faire valoir direct",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "20"
+  },
+  {
+    "code": "BER",
+    "label": "Banane export - réforme foncière",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "20"
+  },
+  {
+    "code": "BFP",
+    "label": "Bande admissible le long d'une forêt avec production",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "28"
+  },
+  {
+    "code": "BFS",
+    "label": "Bordure le long d'une forêt sans production",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "BLT",
+    "label": "Bleuet",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "BOP",
+    "label": "Bois pâturé",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "17"
+  },
+  {
+    "code": "BRH",
+    "label": "Bourrache de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "BRO",
+    "label": "Brôme de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "28"
+  },
+  {
+    "code": "BTA",
+    "label": "Bande tampon",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "BTH",
+    "label": "Blé tendre d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "1"
+  },
+  {
+    "code": "BTN",
+    "label": "Betterave",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "BTP",
+    "label": "Blé tendre de printemps",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "1"
+  },
+  {
+    "code": "BUR",
+    "label": "Bugle rampant",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "BVF",
+    "label": "Betterave fourragère",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "CAB",
+    "label": "Caroube",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "22"
+  },
+  {
+    "code": "CAC",
+    "label": "Café et cacao",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "CAE",
+    "label": "Châtaigneraie entretenue par des porcins ou des petits ruminants",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "CAF",
+    "label": "Carotte fourragère",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "CAG",
+    "label": "Autre céréale ou pseudo-céréale secondaire de printemps (alpiste, quinoa, chia, )",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "CAR",
+    "label": "Carotte",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "CAV",
+    "label": "Carvi",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "CBT",
+    "label": "Cerise",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "CCN",
+    "label": "Concombre, cornichon et courgette",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "CCT",
+    "label": "Courgette / Citrouille",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "CEE",
+    "label": "Chênaie entretenue par des porcins ou des petits ruminants",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "CEL",
+    "label": "Céleri",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "CES",
+    "label": "Chicorée / Endive / Scarole",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "CGF",
+    "label": "Autre céréale de genre Fagopyrum",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CGH",
+    "label": "Autre céréale de genre Phalaris",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CGO",
+    "label": "Autre céréale de genre Sorghum",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CGP",
+    "label": "Autre céréale de genre Panicum",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CGS",
+    "label": "Autre céréale de genre Setaria",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CHA",
+    "label": "Autre céréale d'hiver de genre Avena",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CHF",
+    "label": "Chou fourrager",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "CHH",
+    "label": "Autre céréale d'hiver de genre Hordeum",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CHR",
+    "label": "Chardon Marie",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "CHS",
+    "label": "Autre céréale d'hiver de genre Secale",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CHT",
+    "label": "Autre céréale d'hiver de genre Triticum",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CHU",
+    "label": "Chou",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "CHV",
+    "label": "Chanvre",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "9"
+  },
+  {
+    "code": "CIB",
+    "label": "Ciboulette",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "CID",
+    "label": "Cultures conduites en inter-rangs (bandes de cultures différentes)  - 2 cultures représentant chacune plus de 25  %",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "CIT",
+    "label": "Cultures conduites en inter-rangs (bandes de cultures différentes)  - 3 cultures représentant chacune plus de 25  %",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "CMB",
+    "label": "Courge musquée / Butternut",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "CML",
+    "label": "Cameline",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "CMM",
+    "label": "Camomille",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "CPA",
+    "label": "Autre céréale de printemps de genre Avena",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CPH",
+    "label": "Autre céréale de printemps de genre Hordeum",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CPL",
+    "label": "Mélange multi-espèces (céréales, oléagineux, légumineuses, ) sans graminées prairiales et sans prédominance de légumineuses",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "CPS",
+    "label": "Autre céréale de printemps de genre Secale",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CPT",
+    "label": "Autre céréale de printemps de genre Triticum",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CPZ",
+    "label": "Autre céréale de printemps de genre Zea",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "4"
+  },
+  {
+    "code": "CRA",
+    "label": "Cresson alénois de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "CRD",
+    "label": "Coriandre",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "CRF",
+    "label": "Cerfeuil",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "CRN",
+    "label": "Cornille",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "CRS",
+    "label": "Cresson",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "CSA",
+    "label": "Canne à sucre",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "26"
+  },
+  {
+    "code": "CSF",
+    "label": "Canne à sucre - fermage",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "26"
+  },
+  {
+    "code": "CSI",
+    "label": "Canne à sucre - indivision",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "26"
+  },
+  {
+    "code": "CSP",
+    "label": "Canne à sucre - propriété ou faire valoir direct",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "26"
+  },
+  {
+    "code": "CSR",
+    "label": "Canne à sucre - réforme foncière",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "26"
+  },
+  {
+    "code": "CTG",
+    "label": "Châtaigne",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "22"
+  },
+  {
+    "code": "CUA",
+    "label": "Culture sous abattis",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "28"
+  },
+  {
+    "code": "CUM",
+    "label": "Cumin",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "CUR",
+    "label": "Curcuma",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "CZH",
+    "label": "Colza d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "5"
+  },
+  {
+    "code": "CZP",
+    "label": "Colza de printemps",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "5"
+  },
+  {
+    "code": "DOL",
+    "label": "Dolique",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "DTY",
+    "label": "Dactyle de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "EPE",
+    "label": "Epeautre",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "EPI",
+    "label": "Epinard, oseille et bette",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "EST",
+    "label": "Estragon",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "FAG",
+    "label": "Autre fourrage annuel d'un autre genre",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "FET",
+    "label": "Fétuque de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "FEV",
+    "label": "Fève",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "FF5",
+    "label": "Féverole fourragère implantée pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "FFO",
+    "label": "Autre féverole fourragère",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "FLA",
+    "label": "Autre légume ou fruit annuel",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "FLO",
+    "label": "Fléole de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "FLP",
+    "label": "Autre légume ou fruit pérenne (hors petit fruit à baie)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "FNO",
+    "label": "Fenouil",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "FNU",
+    "label": "Fenugrec",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "FRA",
+    "label": "Fraise (en pleine terre)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "FSG",
+    "label": "Autre plante fourragère sarclée d'un autre genre",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "FVL",
+    "label": "Féverole d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "FVT",
+    "label": "Féverole semée tardivement (après le 31/05)",
+    "startingYear": 2015,
+    "endingYear": 2015,
+    "groupCode": "8"
+  },
+  {
+    "code": "GAI",
+    "label": "Gaillet",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "GES",
+    "label": "Cornille, dolique (y/c lablab), gesse",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "GFP",
+    "label": "Autre graminée fourragère pure de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "HAR",
+    "label": "Haricot / Flageolet",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "HBL",
+    "label": "Houblon",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "HPC",
+    "label": "Horticulture ornementale",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "HSA",
+    "label": "Horticulture ornementale sous abri",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "J5M",
+    "label": "Jachère de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "11"
+  },
+  {
+    "code": "J6P",
+    "label": "Jachère de 6 ans ou plus",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "11"
+  },
+  {
+    "code": "J6S",
+    "label": "Jachère de 6 ans ou plus déclarée comme SIE",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "11"
+  },
+  {
+    "code": "JNO",
+    "label": "Jachère sanitaire imposée par l'administration",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "11"
+  },
+  {
+    "code": "JO5",
+    "label": "Jarosse implantée pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "JOD",
+    "label": "Jarosse déshydratée",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "JOS",
+    "label": "Autre jarosse",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "LAV",
+    "label": "Lavande et lavandin",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "LBF",
+    "label": "Laitue, endive et autres salades",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "LDH",
+    "label": "Lupin doux d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "LDP",
+    "label": "Lupin doux de printemps semé avant le 31/05",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "LDT",
+    "label": "Lupin doux de printemps semé tardivement (après le 31/05)",
+    "startingYear": 2015,
+    "endingYear": 2015,
+    "groupCode": "8"
+  },
+  {
+    "code": "LEC",
+    "label": "Lentille",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "15"
+  },
+  {
+    "code": "LEF",
+    "label": "Lentille fourragère",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "LFH",
+    "label": "Autre lupin fourrager d'hiver",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "LFP",
+    "label": "Autre lupin fourrager de printemps",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "LH5",
+    "label": "Lupin fourrager d'hiver implanté pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "LIF",
+    "label": "Lin fibres",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "9"
+  },
+  {
+    "code": "LIH",
+    "label": "Lin non textile d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "7"
+  },
+  {
+    "code": "LIP",
+    "label": "Lin non textile de printemps",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "7"
+  },
+  {
+    "code": "LOT",
+    "label": "Lotier, minette",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "LP5",
+    "label": "Lupin fourrager de printemps implanté pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "LSA",
+    "label": "Légume sous abri",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "LU5",
+    "label": "Luzerne implantée pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "LUD",
+    "label": "Luzerne déshydratée",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "LUZ",
+    "label": "Autre luzerne",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "MAC",
+    "label": "Mâche",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "MAV",
+    "label": "Mauve",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "MC5",
+    "label": "Mélange de légumineuses fourragères prépondérantes au semis implantées pour la récolte 2015 et de céréales",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "ME5",
+    "label": "Mélilot implanté pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "MED",
+    "label": "Mélilot déshydraté",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "MH5",
+    "label": "Mélange de légumineuses fourragères prépondérantes au semis implantées pour la récolte 2015 et d'herbacées ou de graminées fourragères",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "MID",
+    "label": "Maïs doux",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "2"
+  },
+  {
+    "code": "MIE",
+    "label": "Maïs ensilage",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "2"
+  },
+  {
+    "code": "MIN",
+    "label": "Minette",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "MIS",
+    "label": "Maïs (hors maïs doux)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "2"
+  },
+  {
+    "code": "ML5",
+    "label": "Mélange de légumineuses fourragères implantées pour la récolte 2015 (entre elles)",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "MLD",
+    "label": "Mélange de légumineuses déshydratées (entre elles)",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "MLG",
+    "label": "Mélange de légumineuses prépondérantes et de graminées fourragères de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "MLI",
+    "label": "Mélisse",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "MLO",
+    "label": "Melon et pastèque",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "MLP",
+    "label": "Millepertuis",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "MLT",
+    "label": "Millet",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "MOH",
+    "label": "Moha",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "MOT",
+    "label": "Moutarde d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "MPA",
+    "label": "Autre mélange de plantes fixant l'azote",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "28"
+  },
+  {
+    "code": "MPC",
+    "label": "Mélange multi-espèces avec légumineuses à graines prépondérantes sans graminées prairiales",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "MRG",
+    "label": "Marguerite",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "MRJ",
+    "label": "Marjolaine / Origan",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "MRS",
+    "label": "Marais salants",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "MTH",
+    "label": "Menthe",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "NOS",
+    "label": "Noisette",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "22"
+  },
+  {
+    "code": "NOX",
+    "label": "Noix (y compris noix de coco)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "22"
+  },
+  {
+    "code": "NVE",
+    "label": "Navette d'été",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "7"
+  },
+  {
+    "code": "NVF",
+    "label": "Navet fourrager",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "NVH",
+    "label": "Navette d'hiver",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "7"
+  },
+  {
+    "code": "NVT",
+    "label": "Navet, rutabaga et autres légumes racines (hors carotte, radis, betterave)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "NYG",
+    "label": "Nyger",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "28"
+  },
+  {
+    "code": "OAG",
+    "label": "Autres oléagineux ou mélange d'oléagineux de printemps et d'été (dont moutarde ou navette d'été, sésame et nyger)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "7"
+  },
+  {
+    "code": "OEH",
+    "label": "Autre oléagineux d'espèce Helianthus",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "7"
+  },
+  {
+    "code": "OEI",
+    "label": "Oeillette (pavot)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "7"
+  },
+  {
+    "code": "OHN",
+    "label": "Autre oléagineux d'hiver d'espèce Brassica napus",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "7"
+  },
+  {
+    "code": "OHR",
+    "label": "Autres oléagineux ou mélange d'oléagineux d'hiver (dont navette d'hiver)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "7"
+  },
+  {
+    "code": "OIG",
+    "label": "Oignon et échalote",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "OLI",
+    "label": "Olive",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "23"
+  },
+  {
+    "code": "OPN",
+    "label": "Autre oléagineux de printemps d'espèce Brassica napus",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "7"
+  },
+  {
+    "code": "OPR",
+    "label": "Autre oléagineux de printemps d'espèce Brassica rapa",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "7"
+  },
+  {
+    "code": "ORH",
+    "label": "Orge d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "3"
+  },
+  {
+    "code": "ORP",
+    "label": "Orge de printemps",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "3"
+  },
+  {
+    "code": "OSE",
+    "label": "Oseille",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "PAG",
+    "label": "Autre légumineuse à graines ou fourragères",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "PAN",
+    "label": "Panais",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "PAQ",
+    "label": "Pâquerette",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "PAR",
+    "label": "Plante aromatique (autre que vanille)",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "PAS",
+    "label": "Pastèque",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "PAT",
+    "label": "Paturin commun de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "PCH",
+    "label": "Pois chiche",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "15"
+  },
+  {
+    "code": "PCL",
+    "label": "Phacélie de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "28"
+  },
+  {
+    "code": "PEP",
+    "label": "Pépinière (plants laissés en terre plus dun an)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "PFH",
+    "label": "Autre pois fourrager d'hiver",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "PFP",
+    "label": "Autre pois fourrager de printemps",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "PFR",
+    "label": "Petit fruit à baie (hors fraise)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "PH5",
+    "label": "Pois fourrager d'hiver implanté pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "PHI",
+    "label": "Pois protéagineux d'hiver (alimentation animale)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "PIS",
+    "label": "Pistache",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "22"
+  },
+  {
+    "code": "PMD",
+    "label": "Plante médicinale",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "PMV",
+    "label": "Primevère",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "POR",
+    "label": "Poireau",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "POT",
+    "label": "Potiron, citrouille et autres courges",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "PP5",
+    "label": "Pois fourrager de printemps implanté pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "PPA",
+    "label": "Autre PPAM annuelle",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "PPF",
+    "label": "Plante à parfum (autre que géranium et vétiver)",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "PPH",
+    "label": "Prairie de 6 ans ou plus (couvert herbacé)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "18"
+  },
+  {
+    "code": "PPO",
+    "label": "Petits pois",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "PPP",
+    "label": "Plantes médicinales pérennes (arbres ou arbustes) sauf cassis",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "PPT",
+    "label": "Pois de printemps semé tardivement (après le 31/05)",
+    "startingYear": 2015,
+    "endingYear": 2015,
+    "groupCode": "8"
+  },
+  {
+    "code": "PRL",
+    "label": "Prairie en rotation longue (6 ans ou plus)",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "18"
+  },
+  {
+    "code": "PRU",
+    "label": "Prune (y compris mirabelle, quetsche, reine-claude, )",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "PSE",
+    "label": "Pensée",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "PSL",
+    "label": "Persil",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "PSY",
+    "label": "Plantain psyllium",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "PTC",
+    "label": "Pomme de terre",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "PTF",
+    "label": "Pomme de terre féculière",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "PTR",
+    "label": "Prairie temporaire de moins de 5 ans et autre mélange avec graminées",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "19"
+  },
+  {
+    "code": "PVP",
+    "label": "Poivron, piment et aubergine",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "PVT",
+    "label": "Pêche (y compris nectarine, brugnon)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "PWT",
+    "label": "Poire Williams",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "RDF",
+    "label": "Radis fourrager",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "RDI",
+    "label": "Radis",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "RGA",
+    "label": "Ray-grass de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "19"
+  },
+  {
+    "code": "RIZ",
+    "label": "Riz",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "14"
+  },
+  {
+    "code": "ROM",
+    "label": "Romarin",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "ROQ",
+    "label": "Roquette",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "ROS",
+    "label": "Roselière",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "28"
+  },
+  {
+    "code": "RUT",
+    "label": "Rutabaga",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "RVI",
+    "label": "Restructuration du vignoble",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "21"
+  },
+  {
+    "code": "SA5",
+    "label": "Sainfoin implanté pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "SAD",
+    "label": "Sainfoin déshydraté",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "SAI",
+    "label": "Sainfoin",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "SBO",
+    "label": "Boisement aidé d'une surface agricole",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "SE5",
+    "label": "Seradelle implantée pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "SED",
+    "label": "Serradelle déshydratée",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "SER",
+    "label": "Autre seradelle",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "SFI",
+    "label": "Salsifi",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "SGE",
+    "label": "Sauge",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "SGH",
+    "label": "Seigle d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "SGP",
+    "label": "Seigle de printemps",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "SNE",
+    "label": "Surface agricole temporairement non admissible, autre que surface pâturable",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "SOG",
+    "label": "Sorgho",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "SOJ",
+    "label": "Soja",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "7"
+  },
+  {
+    "code": "SPH",
+    "label": "Prairie avec herbe prédominante et ressources fourragères ligneuses présentes",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "17"
+  },
+  {
+    "code": "SPL",
+    "label": "Surface pastorale - Ressources fourragères ligneuses prédominantes",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "17"
+  },
+  {
+    "code": "SRI",
+    "label": "Sariette",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "SRS",
+    "label": "Sarrasin",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "TAB",
+    "label": "Tabac",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "TBT",
+    "label": "Tubercule tropical",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "TCR",
+    "label": "Taillis à courte rotation",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "THY",
+    "label": "Thym",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "TOM",
+    "label": "Tomate (en pleine terre)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "TOP",
+    "label": "Topinambour",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "TOT",
+    "label": "Tomate pour transformation",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "TR5",
+    "label": "Trèfle implanté pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "TRD",
+    "label": "Trèfle déshydraté",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "TRE",
+    "label": "Trèfle",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "TRN",
+    "label": "Tournesol",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "6"
+  },
+  {
+    "code": "TRU",
+    "label": "Truffière (chênaie de plants mycorhizés)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "TTH",
+    "label": "Triticale d'hiver",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "TTP",
+    "label": "Triticale de printemps",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "VAL",
+    "label": "Valériane",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "VE5",
+    "label": "Vesce implantée pour la récolte 2015",
+    "startingYear": 2015,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "VED",
+    "label": "Vesce déshydratée",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "VER",
+    "label": "Véronique",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "25"
+  },
+  {
+    "code": "VES",
+    "label": "Vesce, mélilot, jarosse, serradelle",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "VET",
+    "label": "Vétiver",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "28"
+  },
+  {
+    "code": "VNB",
+    "label": "Vanille sous bois",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "VNL",
+    "label": "Vanille",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "VNV",
+    "label": "Vanille verte",
+    "startingYear": 2015,
+    "endingYear": 2019,
+    "groupCode": "24"
+  },
+  {
+    "code": "VRC",
+    "label": "Vigne (sauf vigne rouge)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "21"
+  },
+  {
+    "code": "VRG",
+    "label": "Autre verger (y compris verger DOM)",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "20"
+  },
+  {
+    "code": "VRT",
+    "label": "Vigne : raisins de table",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "21"
+  },
+  {
+    "code": "XFE",
+    "label": "X-Felium de 5 ans ou moins",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "16"
+  },
+  {
+    "code": "YLA",
+    "label": "Ylang-ylang",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "MCR",
+    "label": "Mélange de céréales ou pseudo-céréales d'hiver entre elles",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "MOL",
+    "label": "Mélange d'oléagineux",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "7"
+  },
+  {
+    "code": "MPT",
+    "label": "Mélange de protéagineux semés tardivement (après le 31/05)",
+    "startingYear": 2015,
+    "endingYear": 2015,
+    "groupCode": "8"
+  },
+  {
+    "code": "MCT",
+    "label": "Miscanthus",
+    "startingYear": 2015,
+    "endingYear": 2022,
+    "groupCode": "28"
+  },
+  {
+    "code": "BCC",
+    "label": "Banane créole (fruit et légume) - colonnage",
+    "startingYear": 2015,
+    "endingYear": 1900,
+    "groupCode": null
+  },
+  {
+    "code": "CSC",
+    "label": "Canne à sucre - colonnage",
+    "startingYear": 2015,
+    "endingYear": 1900,
+    "groupCode": null
+  },
+  {
+    "code": "CNA",
+    "label": "Châtaigneraie non entretenue par des porcins ou des petits ruminants",
+    "startingYear": 2019,
+    "endingYear": null,
+    "groupCode": null
+  },
+  {
+    "code": "CNE",
+    "label": "Chênaie non entretenue par des porcins ou des petits ruminants",
+    "startingYear": 2019,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "MLC",
+    "label": "Mélange multi-espèces avec légumineuses fourragères prépondérantes sans graminées prairiales",
+    "startingYear": 2019,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "MLF",
+    "label": "Mélange de légumineuses à graines ou fourragères pures",
+    "startingYear": 2019,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "MLS",
+    "label": "Mélange de légumineuses non fourragères prépondérantes et de céréales et/ou d'oléagineux",
+    "startingYear": 2020,
+    "endingYear": 2022,
+    "groupCode": "8"
+  },
+  {
+    "code": "ACP",
+    "label": "Autre culture pérenne et jachère dans les bananeraies",
+    "startingYear": 2021,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "BC",
+    "label": "Blé dur d'hiver sans semences certifiées",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "BD",
+    "label": "Blé dur de printemps sans semences certifiées",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "CX",
+    "label": "Semences de chanvre",
+    "startingYear": 2009,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "CZ",
+    "label": "Semences de chanvre + contrat textile",
+    "startingYear": 2009,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "J1",
+    "label": "Gel industriel blé",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "J2",
+    "label": "Gel industriel colza",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "J3",
+    "label": "Gel industriel tournesol",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "J4",
+    "label": "Gel industriel maïs",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "J5",
+    "label": "Gel industriel protéagineux",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "J6",
+    "label": "Gel industriel autres céréales",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "J7",
+    "label": "Gel industriel autres oléagineux",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "J8",
+    "label": "Gel industriel cultures admissibles aux DPU hors COP",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "LV",
+    "label": "Lavande",
+    "startingYear": 2009,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LY",
+    "label": "Semences de lin fibres",
+    "startingYear": 2009,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "LZ",
+    "label": "Semences de lin fibres + contrat textile",
+    "startingYear": 2009,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "VR",
+    "label": "Vétiver",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VV",
+    "label": "Vignes de cuve",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "CSE",
+    "label": "Chanvre sans étiquette conforme",
+    "startingYear": 2018,
+    "endingYear": null,
+    "groupCode": "9"
+  },
+  {
+    "code": "LO7",
+    "label": "Lotier implanté pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "MI7",
+    "label": "Minette implanté pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "FF7",
+    "label": "Féverole fourragère implantée pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "JO7",
+    "label": "Jarosse implantée pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "LH7",
+    "label": "Lupin fourrager d'hiver implanté pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "LP7",
+    "label": "Lupin fourrager de printemps implanté pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "LU7",
+    "label": "Luzerne implantée pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "ME7",
+    "label": "Mélilot implanté pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "PH7",
+    "label": "Pois fourrager d'hiver implanté pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "PP7",
+    "label": "Pois fourrager de printemps implanté pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "SA7",
+    "label": "Sainfoin implanté pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "SE7",
+    "label": "Serradelle implantée pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "TR7",
+    "label": "Trèfle implanté pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "VE7",
+    "label": "Vesce implantée pour la récolte 2017",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "ML7",
+    "label": "Mélange de légumineuses fourragères implantées pour la récolte 2017 (entre elles)",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "MC7",
+    "label": "Mélange de légumineuses fourragères prépondérantes au semis implantées pour la récolte 2017 et de céréales et d'oléagineux",
+    "startingYear": 2017,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "MH7",
+    "label": "Mélange de légumineuses fourragères prépondérantes au semis implantées pour la récolte 2017 et d'herbacées ou de graminées fourragères",
+    "startingYear": 2017,
+    "endingYear": 2017,
+    "groupCode": "16"
+  },
+  {
+    "code": "ORT",
+    "label": "Ortie",
+    "startingYear": 2017,
+    "endingYear": 2022,
+    "groupCode": "24"
+  },
+  {
+    "code": "C7",
+    "label": "Chanvre",
+    "startingYear": 2012,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "C8",
+    "label": "Chanvre commercialisé",
+    "startingYear": 2012,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LW",
+    "label": "Lin fibres commercialisé",
+    "startingYear": 2012,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "TT",
+    "label": "Tomates",
+    "startingYear": 2012,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "TU",
+    "label": "Tomates commercialisées",
+    "startingYear": 2012,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "DL",
+    "label": "Légumineuses déshydratées",
+    "startingYear": 2012,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "DM",
+    "label": "Légumineuses déshydratées commercialisées",
+    "startingYear": 2012,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BV",
+    "label": "Pépinières",
+    "startingYear": 2011,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BW",
+    "label": "Pépinières commercialisées",
+    "startingYear": 2011,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BX",
+    "label": "Petits fruits rouges",
+    "startingYear": 2011,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BY",
+    "label": "Petits fruits rouges commercialisés",
+    "startingYear": 2011,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "C6",
+    "label": "Parcours ligneux (Corse)",
+    "startingYear": 2011,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MU",
+    "label": "Maraîchage dont cultures sous serre et tunnels sauf hors-sol",
+    "startingYear": 2011,
+    "endingYear": 2012,
+    "groupCode": null
+  },
+  {
+    "code": "MV",
+    "label": "Maraîchage commercialisé dont serre et tunnels sauf hors-sol",
+    "startingYear": 2011,
+    "endingYear": 2012,
+    "groupCode": null
+  },
+  {
+    "code": "VU",
+    "label": "Vignes : raisins de table",
+    "startingYear": 2011,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VX",
+    "label": "Vignes commercialisées : raisins de table",
+    "startingYear": 2011,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VY",
+    "label": "Vignes : raisins de cuve",
+    "startingYear": 2011,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VZ",
+    "label": "Vignes commercialisées : raisins de cuve",
+    "startingYear": 2011,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MW",
+    "label": "Maraîchage commercialisé sauf serre",
+    "startingYear": 2013,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MX",
+    "label": "Maraîchage sauf serre",
+    "startingYear": 2013,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MY",
+    "label": "Maraîchage sous serre et tunnels sauf hors-sol",
+    "startingYear": 2013,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "ZZZ",
+    "label": "Culture inconnue",
+    "startingYear": 2015,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "MPP",
+    "label": "Mélange de protéagineux (pois et/ou lupin et/ou féverole)",
+    "startingYear": 2018,
+    "endingYear": 2022,
+    "groupCode": "8"
+  },
+  {
+    "code": "LO8",
+    "label": "Lotier implanté pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "MI8",
+    "label": "Minette implanté pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "FF8",
+    "label": "Féverole fourragère implantée pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "JO8",
+    "label": "Jarosse implantée pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "LH8",
+    "label": "Lupin fourrager d'hiver implanté pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "LP8",
+    "label": "Lupin fourrager de printemps implanté pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "LU8",
+    "label": "Luzerne implantée pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "ME8",
+    "label": "Mélilot implanté pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "PH8",
+    "label": "Pois fourrager d'hiver implanté pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "PP8",
+    "label": "Pois fourrager de printemps implanté pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "SA8",
+    "label": "Sainfoin implanté pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "SE8",
+    "label": "Serradelle implantée pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "TR8",
+    "label": "Trèfle implanté pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "VE8",
+    "label": "Vesce implantée pour la récolte 2018",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "ML8",
+    "label": "Mélange de légumineuses fourragères implantées pour la récolte 2018 (entre elles)",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "MC8",
+    "label": "Mélange de légumineuses fourragères prépondérantes implantées pour la récolte 2018 et de céréales et d'oléagineux",
+    "startingYear": 2018,
+    "endingYear": 2018,
+    "groupCode": "16"
+  },
+  {
+    "code": "VRN",
+    "label": "Vigne : raisins de cuve non en production",
+    "startingYear": 2018,
+    "endingYear": 2022,
+    "groupCode": "21"
+  },
+  {
+    "code": "J9",
+    "label": "Gel industriel - non défini",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "ZA",
+    "label": "Ananas commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YA",
+    "label": "Canne à sucre commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YI",
+    "label": "Curcuma commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YL",
+    "label": "Géranium commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YE",
+    "label": "Horticulture ornem. plein champ commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YF",
+    "label": "Horticulture ornem. sous abri commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YG",
+    "label": "Légumes sous abri commercialisés",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YM",
+    "label": "Pastèques commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YO",
+    "label": "Plantes à parfum (autres que gér. et vét.) commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YH",
+    "label": "Plantes aromatiques (autres que vanille) commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YJ",
+    "label": "Plantes médicinales commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YC",
+    "label": "Tubercules tropicaux commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YP",
+    "label": "Vanille commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YQ",
+    "label": "Vanille sous bois commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YR",
+    "label": "Vétiver commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YB",
+    "label": "Banane créole (fruit et légume) commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YD",
+    "label": "Café - cacao commercialisé",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "YN",
+    "label": "Cultures sous abattis commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AC",
+    "label": "Autres céréales",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AF",
+    "label": "Autres fleurs",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "AG",
+    "label": "Agrumes transformés",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AL",
+    "label": "Alpiste",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AM",
+    "label": "Amandes",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AO",
+    "label": "Autres oléagineux",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AT",
+    "label": "Autres cultures non précisées dans la liste (admissibles)",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "AU",
+    "label": "Autres utilisations (non admissibles)",
+    "startingYear": 2007,
+    "endingYear": 2013,
+    "groupCode": null
+  },
+  {
+    "code": "AV",
+    "label": "Avoine",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "BA",
+    "label": "Blé dur hiver",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BB",
+    "label": "Blé dur printemps",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BE",
+    "label": "Betterave sucrière",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "BH",
+    "label": "Blé tendre hiver",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BO",
+    "label": "Aide au boisement de terre agricole",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "BP",
+    "label": "Blé tendre printemps",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CA",
+    "label": "Caroubes",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CG",
+    "label": "Châtaignes",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CH",
+    "label": "Colza d'hiver",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CI",
+    "label": "Chicorée à inuline",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "CO",
+    "label": "Chanvre oléagineux",
+    "startingYear": 2007,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "CP",
+    "label": "Colza de printemps",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CU",
+    "label": "Chanvre sans contrat",
+    "startingYear": 2007,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "CV",
+    "label": "Chanvre fibres",
+    "startingYear": 2007,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "CW",
+    "label": "Semences de chanvre",
+    "startingYear": 2007,
+    "endingYear": 2008,
+    "groupCode": null
+  },
+  {
+    "code": "DH",
+    "label": "Fourrages déshydratés",
+    "startingYear": 2007,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "EN",
+    "label": "Autres cultures énergétiques",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "EP",
+    "label": "Epeautre (petit épeautre ou engrain et grand épeautre)",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "ES",
+    "label": "Estives",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "EX",
+    "label": "Semences d'épeautre",
+    "startingYear": 2007,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "FA",
+    "label": "Fourrage annuel",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FE",
+    "label": "Fèves et féveroles",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "FN",
+    "label": "Fleurs admissibles",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "FP",
+    "label": "Autres fruits et légumes",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "GB",
+    "label": "Gel betterave",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "GE",
+    "label": "Gel",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "GI",
+    "label": "Gel industriel hors betterave",
+    "startingYear": 2007,
+    "endingYear": 2008,
+    "groupCode": null
+  },
+  {
+    "code": "GL",
+    "label": "Gel légumineuses",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "GV",
+    "label": "Gel vert",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "HC",
+    "label": "Hors culture - aidée",
+    "startingYear": 2007,
+    "endingYear": 2013,
+    "groupCode": null
+  },
+  {
+    "code": "HO",
+    "label": "Houblon",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LC",
+    "label": "Légumes de plein champs",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LD",
+    "label": "Landes et parcours",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LE",
+    "label": "Lentilles",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LN",
+    "label": "Lin non textile",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LP",
+    "label": "Lupin doux",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LS",
+    "label": "Semences de lin fibres",
+    "startingYear": 2007,
+    "endingYear": 2008,
+    "groupCode": null
+  },
+  {
+    "code": "LT",
+    "label": "Lin fibres",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "LU",
+    "label": "Lin fibres sans contrat",
+    "startingYear": 2007,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "LX",
+    "label": "Semences de lin oléagineux",
+    "startingYear": 2007,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "MA",
+    "label": "Maïs",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MD",
+    "label": "Maïs doux",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "ME",
+    "label": "Maïs ensilage",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MI",
+    "label": "Millet",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MS",
+    "label": "Maïs semence",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MT",
+    "label": "Moutarde",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "NS",
+    "label": "Noisettes",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "NX",
+    "label": "Noix",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "OA",
+    "label": "Oliveraie avant 1998",
+    "startingYear": 2007,
+    "endingYear": 2007,
+    "groupCode": null
+  },
+  {
+    "code": "OH",
+    "label": "Orge d'hiver",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "OI",
+    "label": "Oignon",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "OL",
+    "label": "Oliveraie",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "ON",
+    "label": "Oliveraie après 1998 et hors PRO",
+    "startingYear": 2007,
+    "endingYear": 2007,
+    "groupCode": null
+  },
+  {
+    "code": "OP",
+    "label": "Orge de printemps",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PA",
+    "label": "Plantes méd",
+    "startingYear": 2007,
+    "endingYear": 2007,
+    "groupCode": null
+  },
+  {
+    "code": "PC",
+    "label": "Pois chiches",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PE",
+    "label": "Pommes de terre de consommation",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PF",
+    "label": "Pommes de terre féculières",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PH",
+    "label": "Pois d'hiver",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PI",
+    "label": "Pistaches",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PL",
+    "label": "Plants de pomme de terre",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PM",
+    "label": "Plantes à parfum",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "PN",
+    "label": "Prairie permanente (non intégrée dans 1 rotation)",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PO",
+    "label": "Plantes médicinales",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "PP",
+    "label": "Pois de printemps",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PR",
+    "label": "Autres protéagineux",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PS",
+    "label": "Petits pois",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PT",
+    "label": "Prairie temporaire (entrant dans 1 rotation)",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PX",
+    "label": "Prairie temporaire de plus de 5 ans",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "R1",
+    "label": "Semences de riz - grains longs",
+    "startingYear": 2007,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "R2",
+    "label": "Semences de riz - grains courts",
+    "startingYear": 2007,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "RE",
+    "label": "Restructuration du vignoble",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "RZ",
+    "label": "Riz",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "SE",
+    "label": "Seigle",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "SG",
+    "label": "Semences potagères",
+    "startingYear": 2007,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "SH",
+    "label": "Sorgho",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "SM",
+    "label": "Semences fourragères",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "SO",
+    "label": "Soja",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "SR",
+    "label": "Sarrasin",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "SY",
+    "label": "Sylviculture (non admissible)",
+    "startingYear": 2007,
+    "endingYear": 2013,
+    "groupCode": null
+  },
+  {
+    "code": "TA",
+    "label": "Tabac",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "TB",
+    "label": "Tournesol MAE biné",
+    "startingYear": 2007,
+    "endingYear": 2007,
+    "groupCode": null
+  },
+  {
+    "code": "TM",
+    "label": "Tomates pour transformation",
+    "startingYear": 2007,
+    "endingYear": 2011,
+    "groupCode": null
+  },
+  {
+    "code": "TO",
+    "label": "Tournesol",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "TR",
+    "label": "Triticale",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "UN",
+    "label": "Usage non agricole",
+    "startingYear": 2007,
+    "endingYear": 2013,
+    "groupCode": null
+  },
+  {
+    "code": "VE",
+    "label": "Vergers",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VI",
+    "label": "Vignes",
+    "startingYear": 2007,
+    "endingYear": 2008,
+    "groupCode": null
+  },
+  {
+    "code": "VS",
+    "label": "Vesces",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "Y0",
+    "label": "Canne à sucre",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "Y1",
+    "label": "Banane export",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "Y2",
+    "label": "Banane créole (fruit et légume)",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "Y3",
+    "label": "Tubercules tropicaux",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "Y4",
+    "label": "Café - cacao",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "Y5",
+    "label": "Vanille autres plantes aromatiques",
+    "startingYear": 2007,
+    "endingYear": 2007,
+    "groupCode": null
+  },
+  {
+    "code": "Y6",
+    "label": "Horticulture ornem. plein champ",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "Y7",
+    "label": "Horticulture ornem. sous abri",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "Y8",
+    "label": "Légumes sous abri",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "Y9",
+    "label": "Culture spécif. DOM 1",
+    "startingYear": 2007,
+    "endingYear": 2007,
+    "groupCode": null
+  },
+  {
+    "code": "Z1",
+    "label": "Ananas",
+    "startingYear": 2007,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "Z2",
+    "label": "Culture spécif. DOM 3",
+    "startingYear": 2007,
+    "endingYear": 2007,
+    "groupCode": null
+  },
+  {
+    "code": "Z3",
+    "label": "Culture spécif. DOM 4",
+    "startingYear": 2007,
+    "endingYear": 2007,
+    "groupCode": null
+  },
+  {
+    "code": "Z4",
+    "label": "Culture spécif. DOM 5",
+    "startingYear": 2007,
+    "endingYear": 2007,
+    "groupCode": null
+  },
+  {
+    "code": "SB",
+    "label": "Semences de blé dur commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "SF",
+    "label": "Semences fourragères commercialisées",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "MO",
+    "label": "Moutarde commercialisée",
+    "startingYear": 2010,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PZ",
+    "label": "Plantes aromatiques (découplage 2010)",
+    "startingYear": 2005,
+    "endingYear": 2008,
+    "groupCode": null
+  },
+  {
+    "code": "AR",
+    "label": "Plantes aromatiques (autres que vanille)",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CF",
+    "label": "Chou-fleur",
+    "startingYear": 2008,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "CM",
+    "label": "Curcuma",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "CR",
+    "label": "Cerise bigarreaux industrie",
+    "startingYear": 2008,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "DC",
+    "label": "Plantes médicinales",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "ED",
+    "label": "Endive",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FO",
+    "label": "Protéagineux fourragers",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "FR",
+    "label": "Fraise",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "GR",
+    "label": "Géranium",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "JA",
+    "label": "Jachère (rotation culture)",
+    "startingYear": 2008,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "LI",
+    "label": "Légumes industrie",
+    "startingYear": 2008,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "ML",
+    "label": "Melon",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PG",
+    "label": "Pêches pour transformation",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PK",
+    "label": "Poires pour transformation",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PQ",
+    "label": "Pastèque",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "PU",
+    "label": "Prunes d'Ente pour transformation",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "SA",
+    "label": "Cultures sous abattis",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "UM",
+    "label": "Plantes à parfum (autres que géranium et vétiver)",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VA",
+    "label": "Vanille",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VB",
+    "label": "Vanille sous bois",
+    "startingYear": 2008,
+    "endingYear": 2014,
+    "groupCode": null
+  },
+  {
+    "code": "VT",
+    "label": "Vignes de table",
+    "startingYear": 2009,
+    "endingYear": 2009,
+    "groupCode": null
+  },
+  {
+    "code": "ARP",
+    "label": "Plante aromatique pérenne non arbustive ou arborée autre que la vanille",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "PEV",
+    "label": "Pépinière (plants laissés en terre moins dun an)",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "PME",
+    "label": "Plantes médicinales pérennes (autres que arbres)",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "SHD",
+    "label": "Surfaces hautement diversifiées (DOM)",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "AFG",
+    "label": "Autre plante fourragère annuelle (ni légumineuse, ni graminée, ni céréale, ni oléagineux)",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "16"
+  },
+  {
+    "code": "PHF",
+    "label": "Pois et haricot frais (alimentation humaine)",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "PHS",
+    "label": "Pois et haricot secs (alimentation humaine)",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "MSW",
+    "label": "Culture pérenne à forte biomasse (miscanthus, switchgrass, silphie, canne fourragère, )",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "MCS",
+    "label": "Mélange de céréales ou pseudo-céréales de printemps entre elles",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "SAG",
+    "label": "Roselière (récolte de sagnes)",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "FVP",
+    "label": "Féverole de printemps",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "8"
+  },
+  {
+    "code": "AAR",
+    "label": "Plantes aromatiques herbacées non pérennes (< 5 ans) autres que persil ",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "MDI",
+    "label": "Maraîchage diversifié (plusieurs espèces de fruits et légumes majoritairement non pérennes)",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "25"
+  },
+  {
+    "code": "GRA",
+    "label": "Graminée pure exclusivement pour gazon ou pour production de semences certifiées",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "SNU",
+    "label": "Parc d'élevage de monogastriques avec couvert dégradé, voire sol nu",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "JAC",
+    "label": "Jachère (terre arable)",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "11"
+  },
+  {
+    "code": "CAH",
+    "label": "Autre céréale ou pseudo-céréale secondaire d'hiver",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "4"
+  },
+  {
+    "code": "AME",
+    "label": "Plantes médicinales et à parfum non pérennes (< 5 ans)",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "24"
+  },
+  {
+    "code": "SIN",
+    "label": "Surface pastorale ou parcours non utilisé l'année en cours",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "28"
+  },
+  {
+    "code": "PRF",
+    "label": "Plantes à parfum pérennes autres que lavande et lavandin",
+    "startingYear": 2023,
+    "endingYear": null,
+    "groupCode": "24"
+  }
+]

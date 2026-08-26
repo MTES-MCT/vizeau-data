@@ -1,0 +1,140 @@
+name: RPG1 (open data GPKG) to PMTiles
+
+# Usage (recommandé — passe MILLESIME et gère le workspace automatiquement) :
+#   ./run.sh rpg1 2024
+#
+# Sans upload S3 :
+#   ./run.sh rpg1 2024 --target build-pmtiles
+#
+# Forcer le re-téléchargement :
+#   ./run.sh rpg1 2024 --force download
+#
+# Appel tylt direct (MILLESIME doit être ajouté à un fichier env, --env n'existe pas) :
+#   tylt run pipelines/rpg1.yaml --env-file .env --workspace rpg-rpg1-2024
+#
+# Exporter le PMTiles en local :
+#   tylt export rpg-rpg1-2024 build-pmtiles ./output/
+
+steps:
+  # ── 1. Setup ────────────────────────────────────────────────────────────────
+  # Lit config.yaml, détermine la BASE_URL pour le millésime demandé,
+  # et écrit /output/config.env pour les étapes suivantes.
+  - id: setup
+    uses: shell
+    allowNetwork: true
+    with:
+      image: alpine:3.19
+      run: apk add --no-cache yq -q && sh /app/setup.sh
+    mounts:
+      - host: ../scripts/rpg1/setup.sh
+        container: /app/setup.sh
+      - host: ../config.yaml
+        container: /config.yaml
+
+  # ── 2. Discover ─────────────────────────────────────────────────────────────
+  # Sonde les URLs pour déterminer si l'archive est un fichier unique (.7z)
+  # ou multi-parties (.7z.001, .7z.002, …). Écrit la liste des URLs dans parts.txt.
+  - id: discover
+    uses: shell
+    allowNetwork: true
+    with:
+      image: alpine:3.19
+      run: apk add --no-cache curl -q && sh /app/discover.sh
+    mounts:
+      - host: ../scripts/sources/open-data/discover.sh
+        container: /app/discover.sh
+    inputs:
+      - step: setup
+
+  # ── 3. Download ─────────────────────────────────────────────────────────────
+  # Télécharge toutes les parties en parallèle avec curl.
+  - id: download
+    uses: shell
+    allowNetwork: true
+    with:
+      image: alpine:3.19
+      run: apk add --no-cache curl -q && sh /app/download.sh
+    mounts:
+      - host: ../scripts/sources/open-data/download.sh
+        container: /app/download.sh
+    inputs:
+      - step: discover
+
+  # ── 4. Extract ──────────────────────────────────────────────────────────────
+  # Extrait l'archive 7z (gère les deux cas : fichier unique et multi-parties).
+  # 7zip reconstruit automatiquement le fichier complet à partir de .7z.001.
+  - id: extract
+    uses: shell
+    with:
+      packages: [p7zip-full]
+      run: |
+        set -e
+        FIRST=$(ls /input/download/*.7z.001 2>/dev/null | head -1)
+        if [ -n "$FIRST" ]; then
+          echo "Extraction multi-parties : $FIRST"
+          7z x "$FIRST" -o/output/ -y
+        else
+          SINGLE=$(ls /input/download/*.7z 2>/dev/null | head -1)
+          echo "Extraction fichier unique : $SINGLE"
+          7z x "$SINGLE" -o/output/ -y
+        fi
+        echo "Fichiers extraits :"
+        find /output/ -name "*.gpkg" -exec ls -lh {} \;
+    inputs:
+      - step: download
+
+  # ── 5. Fetch BIO ─────────────────────────────────────────────────────────────
+  # Récupère le GeoPackage RPG BIO :
+  #   - Si présent dans l'extraction IGN → copie directe
+  #   - Sinon → téléchargement via l'API data.gouv.fr
+  #     (dataset "parcelles-en-agriculture-biologique-ab-declarees-a-la-pac",
+  #      disponible pour les millésimes 2019–2023)
+  # Sortie : /output/bio.gpkg  (ou /output/.no-bio si indisponible pour ce millésime)
+  - id: fetch-bio
+    uses: shell
+    allowNetwork: true
+    with:
+      image: ghcr.io/osgeo/gdal:ubuntu-small-latest
+      packages: [curl, unzip, file]
+      run: bash /app/fetch-bio.sh
+    mounts:
+      - host: ../scripts/sources/open-data/fetch-bio.sh
+        container: /app/fetch-bio.sh
+    inputs:
+      - step: setup
+      - step: extract
+
+  # ── 6. Convert ──────────────────────────────────────────────────────────────
+  # Convertit chaque couche GeoPackage (EPSG:2154 LAMB93) en FlatGeobuf (EPSG:4326).
+  # Mapping automatique des noms de couches vers les source-layers PMTiles.
+  - id: convert
+    uses: shell
+    with:
+      image: ghcr.io/osgeo/gdal:ubuntu-small-latest
+      run: bash /app/convert.sh
+    mounts:
+      - host: ../scripts/formats/gpkg/convert.sh
+        container: /app/convert.sh
+    inputs:
+      - step: extract
+      - step: fetch-bio
+
+  # ── 7. Build PMTiles ─────────────────────────────────────────────────────────
+  # Assemble tous les FlatGeobuf en un seul PMTiles multi-layers avec tippecanoe.
+  # Sortie : {MILLESIME}/parcelles_france.pmtiles
+  - id: build-pmtiles
+    uses: build-pmtiles
+    inputs:
+      - step: convert
+      - step: setup
+
+  # ── 8. Upload ────────────────────────────────────────────────────────────────
+  # Envoie le PMTiles vers le bucket S3 (compatible Scaleway).
+  # Variables requises via --env-file .env :
+  #   S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_KEY,
+  #   S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY
+  - id: upload
+    uses: upload
+    inputs:
+      - step: build-pmtiles
+      - step: setup
