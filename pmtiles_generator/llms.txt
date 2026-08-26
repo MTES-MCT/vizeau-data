@@ -2,16 +2,17 @@
 
 Générateur multi-sources de pipelines Tylt (moteur d'exécution conteneurisé) pour produire un
 fichier PMTiles multi-couches à partir du Registre Parcellaire Graphique (RPG) français. Chaque
-pipeline vit dans `pipelines/<pipeline>.yaml` et compose des scripts selon deux axes indépendants :
-la **source** (`scripts/sources/<source>/` — comment les données sont récupérées : HTTP public vs
-S3 privé) et le **format** (`scripts/formats/<format>/` — comment les données sont converties en
-FlatGeobuf : GeoPackage vs Shapefile), plus un `scripts/<pipeline>/setup.sh` propre à chaque
-pipeline pour la résolution de config. Toutes les pipelines partagent la fin commune
-(build-pmtiles/upload) via des kits Tylt (`kits/`), et se lancent via `./run.sh <pipeline> <MILLESIME>`.
+pipeline vit dans `pipelines/<pipeline>.yaml` et compose la **source** (`scripts/sources/<source>/`
+— comment les données sont récupérées : HTTP public vs S3 privé, réutilisable entre pipelines) et
+ses propres scripts (`scripts/<pipeline>/setup.sh` pour la résolution de config,
+`scripts/<pipeline>/convert.sh` pour la conversion vers FlatGeobuf — propre à chaque pipeline, car
+la logique de conversion diffère même quand deux pipelines partent d'un format brut proche).
+Toutes les pipelines partagent la fin commune (build-pmtiles/upload) via des kits Tylt (`kits/`),
+et se lancent via `./run.sh <pipeline> <MILLESIME>`.
 
-Pipelines actuelles : `rpg1` (source `open-data` : archives GeoPackage IGN/Géoportail ; format
-`gpkg`) et `rpg2` (source `private-s3` : shapefiles départementaux depuis S3 privé, dataset
-"surfaces graphiques constatées" ; format `shapefile`).
+Pipelines actuelles : `rpg1` (source `open-data` : archives GeoPackage IGN/Géoportail) et `rpg2`
+(source `private-s3` : shapefiles départementaux depuis S3 privé, dataset "surfaces graphiques
+constatées").
 
 ## Pipeline rpg1 (pipelines/rpg1.yaml)
 
@@ -36,7 +37,7 @@ Pipelines actuelles : `rpg1` (source `open-data` : archives GeoPackage IGN/Géop
 - `scripts/sources/open-data/discover.sh` — sonde l'URL base pour détecter archive unique vs multi-parties
 - `scripts/sources/open-data/download.sh` — téléchargement parallèle avec curl
 - `scripts/sources/open-data/fetch-bio.sh` — récupère le GeoPackage RPG BIO (extraction IGN ou API data.gouv.fr en fallback)
-- `scripts/formats/gpkg/convert.sh` — PAC GPKG trouvé par glob (`*_pac*.gpkg`) → `parcelles.fgb` ; BIO GPKG depuis chemin fixe (`bio.gpkg`) → `parcellesbio.fgb` ; nom de couche interne lu via `ogrinfo` ; normalisation des noms de champs en minuscules
+- `scripts/rpg1/convert.sh` — PAC GPKG trouvé par glob (`*_pac*.gpkg`) → `parcelles.fgb` ; BIO GPKG depuis chemin fixe (`bio.gpkg`) → `parcellesbio.fgb` ; nom de couche interne lu via `ogrinfo` ; normalisation des noms de champs en minuscules
 
 ## Couches PMTiles produites
 
@@ -100,7 +101,7 @@ Commande : `./run.sh rpg2 2024`
 
 Créer `pipelines/<pipeline>.yaml` (steps via `uses: shell`, tail via `uses: build-pmtiles` /
 `uses: upload`), en composant `scripts/sources/<source>/*.sh` (accès réseau, réutiliser si la
-source existe déjà) et `scripts/formats/<format>/convert.sh` (doit produire
-`/output/parcelles.fgb`, réutiliser si le format existe déjà) + un `scripts/<pipeline>/setup.sh`
-propre. Si besoin, ajouter `sources.<source>` dans `config.yaml`. `run.sh` route automatiquement
-vers `pipelines/<pipeline>.yaml` — aucune autre modification nécessaire. Détails dans `AGENTS.md`.
+source existe déjà) et un `scripts/<pipeline>/convert.sh` propre à la pipeline (doit produire
+`/output/parcelles.fgb`) + un `scripts/<pipeline>/setup.sh` propre. Si besoin, ajouter
+`sources.<source>` dans `config.yaml`. `run.sh` route automatiquement vers
+`pipelines/<pipeline>.yaml` — aucune autre modification nécessaire. Détails dans `AGENTS.md`.

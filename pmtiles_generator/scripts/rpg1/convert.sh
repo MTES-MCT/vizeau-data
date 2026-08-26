@@ -13,7 +13,30 @@
 #
 # Fix géométrie : -nlt PROMOTE_TO_MULTI pour accepter Polygon et MultiPolygon.
 # Fix champs majuscules (pre-2024) : -dialect SQLITE avec SELECT renommant les champs.
+#
+# La couche PAC porte déjà nativement id_parcel/code_group (champs standard IGN), transmis
+# tels quels. La couche BIO (schéma data.gouv.fr) n'a ni l'un ni l'autre : code_group y est
+# dérivé de code_cultu via le même CASE (généré depuis cultures.json) que le
+# pipeline rpg2, pour classer les cultures de façon identique entre les deux pipelines.
 set -e
+
+CULTURES_JSON=/app/cultures.json
+
+# Génère le CASE code_cultu → code_group depuis cultures.json (même logique que rpg2).
+# Un seul groupCode par code toutes années confondues (vérifié en amont).
+CASE_FRAGMENT=$(jq -r '
+    [.[] | select(.groupCode != null) | {code, groupCode}]
+    | unique_by(.code)
+    | map("WHEN '\''" + (.code | gsub("'\''"; "'\'''\''")) + "'\'' THEN \(.groupCode)")
+    | join(" ")
+' "$CULTURES_JSON")
+
+if [ -z "$CASE_FRAGMENT" ]; then
+    echo "Erreur : impossible de générer le mapping code_cultu → code_group depuis $CULTURES_JSON" >&2
+    exit 1
+fi
+
+CODE_GROUP_SQL="CASE code_cultu ${CASE_FRAGMENT} ELSE 28 END"
 
 get_geom_col() {
     ogrinfo -al -so "$1" "$2" 2>/dev/null \
@@ -140,12 +163,10 @@ convert_bio_gpkg() {
         # GPKG natif data.gouv.fr (2021+) : champs complets
         CODE_CULTU_FIELD="code_culture"
         LBL_CULTU_FIELD="lbl_culture"
-        GRP_CULTU_FIELD="grp_culture"
     else
         # SHP converti (2019-2020) : champs tronqués à 10 caractères
         CODE_CULTU_FIELD="code_cultu"
         LBL_CULTU_FIELD="lbl_cultu"
-        GRP_CULTU_FIELD="grp_cultu"
     fi
 
     # Pour SHP converti : pas de colonne gid → utiliser rowid (FID SQLite)
@@ -156,7 +177,7 @@ convert_bio_gpkg() {
     fi
 
     echo "  → parcellesbio (schéma data.gouv.fr → schéma unifié PAC)"
-    echo "    champs source : ${CODE_CULTU_FIELD}, ${GRP_CULTU_FIELD}"
+    echo "    champs source : ${CODE_CULTU_FIELD}"
 
     ogr2ogr \
         -f FlatGeobuf \
@@ -169,36 +190,7 @@ convert_bio_gpkg() {
               ${CODE_CULTU_FIELD}     AS code_cultu,
               ${LBL_CULTU_FIELD}      AS culture_d1,
               NULL                    AS culture_d2,
-              CASE ${GRP_CULTU_FIELD}
-                WHEN 'Blé tendre'                     THEN 1
-                WHEN 'Maïs grain et ensilage'         THEN 2
-                WHEN 'Orge'                           THEN 3
-                WHEN 'Autres céréales'                THEN 4
-                WHEN 'Colza'                          THEN 5
-                WHEN 'Tournesol'                      THEN 6
-                WHEN 'Autre oléagineux'               THEN 7
-                WHEN 'Protéagineux'                   THEN 8
-                WHEN 'Plantes à fibres'               THEN 9
-                WHEN 'Semences'                       THEN 10
-                WHEN 'Gel'                            THEN 11
-                WHEN 'Gel industriel'                 THEN 12
-                WHEN 'Autres gels'                    THEN 13
-                WHEN 'Riz'                            THEN 14
-                WHEN 'Légumineux à grains'            THEN 15
-                WHEN 'Fourrage'                       THEN 16
-                WHEN 'Estives et landes'              THEN 17
-                WHEN 'Prairies permanentes'           THEN 18
-                WHEN 'Prairies temporaires'           THEN 19
-                WHEN 'Vergers'                        THEN 20
-                WHEN 'Vignes'                         THEN 21
-                WHEN 'Fruits à coque'                 THEN 22
-                WHEN 'Oliviers'                       THEN 23
-                WHEN 'Autres cultures industrielles'  THEN 24
-                WHEN 'Légumes ou fleurs'              THEN 25
-                WHEN 'Canne à sucre'                  THEN 26
-                WHEN 'Arboriculture'                  THEN 27
-                ELSE 28
-              END                     AS code_group
+              (${CODE_GROUP_SQL})     AS code_group
             FROM \"${LAYER}\"" \
         -nln "parcellesbio" \
         -nlt PROMOTE_TO_MULTI \

@@ -111,10 +111,13 @@ steps:
     uses: shell
     with:
       image: ghcr.io/osgeo/gdal:ubuntu-small-latest
+      packages: [jq]
       run: bash /app/convert.sh
     mounts:
-      - host: ../scripts/formats/gpkg/convert.sh
+      - host: ../scripts/rpg1/convert.sh
         container: /app/convert.sh
+      - host: ../cultures.json
+        container: /app/cultures.json
     inputs:
       - step: extract
       - step: fetch-bio

@@ -7,7 +7,7 @@
 #   parcellesbio.fgb  — sous-ensemble où le champ BIO du SHP source vaut 1
 #
 # Schéma cible (identique au pipeline GPKG) :
-#   id_parcel  — PACAGE-NUM_ILOT-NUM_PARCEL (identifiant RPG standard)
+#   pacage     — PACAGE (numéro d'exploitation, extrait dans sa propre colonne)
 #   code_group — code groupe cultural (1-28), dérivé de CODE_CULTU via
 #                inertia/data/cultures.json (mapping code → groupCode)
 #   surf_parc  — SURF_ADM (surface en hectares)
@@ -62,7 +62,7 @@ while IFS= read -r SHP; do
         -dialect SQLITE \
         -sql "SELECT
                 geometry,
-                (PACAGE || '-' || NUM_ILOT || '-' || NUM_PARCEL) AS id_parcel,
+                PACAGE                                            AS pacage,
                 CODE_CULTU                                       AS code_cultu,
                 SURF_ADM                                         AS surf_parc,
                 CULTURE_D1                                       AS culture_d1,

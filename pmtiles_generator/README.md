@@ -105,15 +105,12 @@ défaut : zoom 5–14).
     │   └── private-s3/
     │       ├── discover.sh               # Recherche du dossier daté sur S3
     │       └── download.sh                # aws s3 sync
-    ├── formats/                       # Scripts liés au FORMAT (conversion géospatiale)
-    │   ├── gpkg/
-    │   │   └── convert.sh                # Conversion GeoPackage → FlatGeobuf
-    │   └── shapefile/
-    │       └── convert.sh                # Fusion + dérivation code_group + export fgb
     ├── rpg1/
-    │   └── setup.sh                    # Résolution de la config millésime (via yq)
+    │   ├── setup.sh                    # Résolution de la config millésime (via yq)
+    │   └── convert.sh                    # Conversion GeoPackage → FlatGeobuf
     └── rpg2/
-        └── setup.sh                    # Validation MILLESIME/S3_SOURCE_BUCKET
+        ├── setup.sh                    # Validation MILLESIME/S3_SOURCE_BUCKET
+        └── convert.sh                    # Fusion + dérivation code_group + export fgb
 ```
 
 ## Pipeline `rpg1`
@@ -153,7 +150,8 @@ Détails et conventions : voir `AGENTS.md`.
 ## Ajouter une nouvelle source
 
 Voir `AGENTS.md`, section "Adding a New Source" : créer `pipelines/<source>.yaml`, en composant
-des scripts de `scripts/sources/<source>/*.sh` (accès réseau) et `scripts/formats/<format>/*.sh`
-(conversion) — réutiliser des scripts existants si la source ou le format existe déjà, sinon en
-ajouter de nouveaux. Réutiliser les kits `build-pmtiles`/`upload`. Aucune modification de
+des scripts de `scripts/sources/<source>/*.sh` (accès réseau, réutilisables si la source existe
+déjà) et un `scripts/<pipeline>/convert.sh` propre à la pipeline (la logique de conversion est
+spécifique à chaque pipeline, même si deux pipelines partent d'un format brut similaire).
+Réutiliser les kits `build-pmtiles`/`upload`. Aucune modification de
 `run.sh` n'est nécessaire — il route automatiquement vers `pipelines/<source>.yaml`.

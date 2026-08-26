@@ -7,30 +7,27 @@ Instructions for AI coding agents working in this repository.
 A multi-source Tylt pipeline generator that produces a multi-layer PMTiles file (via
 FlatGeobuf + tippecanoe) from RPG (Registre Parcellaire Graphique) open data. Each **pipeline**
 (a way of obtaining RPG parcels) has its own definition in `pipelines/<pipeline>.yaml` and
-composes scripts along two independent axes:
+composes:
 
 - **source** (`scripts/sources/<source>/`) — how the raw data is fetched (HTTP public archive vs
   private S3 bucket). Covers `discover`/`download`/any source-specific fetch step (e.g.
-  `fetch-bio`).
-- **format** (`scripts/formats/<format>/`) — how the raw data is converted to FlatGeobuf (GPKG
-  vs Shapefile structure). Covers `convert`.
+  `fetch-bio`). Shared across pipelines when they fetch data the same way.
+- **pipeline-specific scripts** (`scripts/<pipeline>/`) — `setup.sh` (resolves/validates the
+  config specific to that pipeline, e.g. which millesime → which URL, or which env vars are
+  required) and `convert.sh` (converts the raw data to FlatGeobuf). `convert.sh` lives next to
+  `setup.sh` rather than being shared by raw-data format, because each pipeline's conversion
+  logic (schema mapping, field normalization, code_group derivation, …) is pipeline-specific
+  even when two pipelines happen to start from the same format.
 
-Each pipeline also has its own thin `scripts/<pipeline>/setup.sh` that resolves/validates the
-config specific to that pipeline (e.g. which millesime → which URL, or which env vars are
-required). All pipelines share the same `build-pmtiles`/`upload` tail via Tylt kits (`kits/`),
-and a single `run.sh` dispatches to any pipeline.
-
-This source/format split exists so that a future pipeline combining an already-supported source
-with an already-supported format (e.g. GeoPackage files downloaded from the private S3 bucket)
-can reuse `scripts/sources/private-s3/*.sh` and `scripts/formats/gpkg/convert.sh` directly,
-instead of duplicating them under a new pipeline-specific directory.
+All pipelines share the same `build-pmtiles`/`upload` tail via Tylt kits (`kits/`), and a single
+`run.sh` dispatches to any pipeline.
 
 Current pipelines:
 
 - **`rpg1`** — downloads GeoPackage archives (7z) from IGN/Géoportail (`sources/open-data` +
-  `formats/gpkg`).
+  `rpg1/convert.sh`).
 - **`rpg2`** — downloads department-split shapefiles from a private S3 bucket
-  (dataset "surfaces graphiques constatées") (`sources/private-s3` + `formats/shapefile`).
+  (dataset "surfaces graphiques constatées") (`sources/private-s3` + `rpg2/convert.sh`).
 
 ## Key Commands
 
@@ -86,18 +83,15 @@ scripts/
     private-s3/
       discover.sh          # Finds the dated S3 folder for the millesime
       download.sh            # aws s3 sync of department shapefiles
-  formats/                # scripts specific to a DATA FORMAT (conversion to FlatGeobuf)
-    gpkg/
-      convert.sh            # ogr2ogr conversion LAMB93→WGS84; PAC GPKG (glob *_pac*.gpkg)
-                             #   → parcelles.fgb, BIO GPKG (fixed path bio.gpkg) →
-                             #   parcellesbio.fgb; handles IGN and data.gouv.fr BIO schemas;
-                             #   field name normalization to lowercase
-    shapefile/
-      convert.sh            # Merges department shapefiles, derives code_group, exports fgb
   rpg1/
     setup.sh              # Reads config.yaml (via yq), resolves download URL, writes config.env
+    convert.sh            # ogr2ogr conversion LAMB93→WGS84; PAC GPKG (glob *_pac*.gpkg)
+                           #   → parcelles.fgb, BIO GPKG (fixed path bio.gpkg) →
+                           #   parcellesbio.fgb; handles IGN and data.gouv.fr BIO schemas;
+                           #   field name normalization to lowercase
   rpg2/
     setup.sh              # Validates MILLESIME/S3_SOURCE_BUCKET, reads shared tippecanoe zoom
+    convert.sh            # Merges department shapefiles, derives code_group, exports fgb
 ```
 
 ## Pipeline definition pattern (Tylt kits)
@@ -139,7 +133,7 @@ auto-discovery work as described above.
 | `download`      | alpine + curl                   | `/output/download/*.7z*`                        |
 | `extract`       | shell kit + p7zip-full          | `/output/*.gpkg`                                |
 | `fetch-bio`     | osgeo/gdal + curl/unzip/file     | `/output/bio.gpkg` (or `.no-bio`)               |
-| `convert`       | osgeo/gdal                      | `/output/*.fgb`                                 |
+| `convert`       | osgeo/gdal + jq                 | `/output/*.fgb`                                 |
 | `build-pmtiles` | build-pmtiles kit (ubuntu+tippecanoe) | `/output/{MILLESIME}/parcelles_france.pmtiles` |
 | `upload`        | upload kit (debian+awscli)      | S3 object                                       |
 
@@ -154,7 +148,7 @@ auto-discovery work as described above.
 | `build-pmtiles` | build-pmtiles kit (shared)          | `/output/{MILLESIME}/parcelles_france.pmtiles`        |
 | `upload`        | upload kit (shared)                | S3 object                                             |
 
-Conventions specific to `rpg2` (private-s3 source + shapefile format):
+Conventions specific to `rpg2` (private-s3 source):
 
 - Source layout on S3: `s3://$S3_SOURCE_BUCKET/$MILLESIME/couches_graphiques/<dated-folder>/`,
   one `.shp` per department (99 files). The dated folder name is not predictable across
@@ -162,16 +156,19 @@ Conventions specific to `rpg2` (private-s3 source + shapefile format):
   directory matching `SURFACES-<MILLESIME>-PARCELLES-GRAPHIQUES-CONSTATEES_<date>` (the sibling
   `-DEPT_` variant is intentionally excluded — it's a different/duplicate export). Fails if 0
   or >1 matches.
-- `scripts/formats/shapefile/convert.sh` merges all department shapefiles into one GeoPackage via
+- `scripts/rpg2/convert.sh` merges all department shapefiles into one GeoPackage via
   a loop of `ogr2ogr -f GPKG -update -append` (SQLite dialect, per-file schema transform), then
   does two single-pass FlatGeobuf exports from that merge: `parcelles.fgb` (all rows) and
   `parcellesbio.fgb` (`WHERE bio = 1`).
-- `code_group` (1-28) has no ready-made source field in this SHP schema (unlike the IGN GPKG) —
-  it's derived from `CODE_CULTU` via a SQL `CASE` generated at runtime with `jq` from
+- `code_group` (1-28) has no ready-made source field in this SHP schema (unlike the IGN GPKG's
+  PAC layer) — it's derived from `CODE_CULTU` via a SQL `CASE` generated at runtime with `jq` from
   `inertia/data/cultures.json` (mounted read-only into the `convert` step), which maps each RPG
-  crop code to a stable `groupCode`.
+  crop code to a stable `groupCode`. `scripts/rpg1/convert.sh` generates the same `CASE` fragment
+  from the same file for its data.gouv.fr BIO branch (see below), so the two pipelines classify
+  crops identically even though the logic is duplicated per pipeline-specific `convert.sh`.
 - `id_parcel` is built as `PACAGE-NUM_ILOT-NUM_PARCEL` (the standard RPG parcel identifier) —
-  there is no single ID field in the source schema.
+  there is no single ID field in the source schema. `PACAGE` is also kept as its own `pacage`
+  column.
 - The BIO layer is not fetched separately: it's the subset of the same source where the `BIO`
   field (integer 0/1) is `1`.
 
@@ -187,12 +184,16 @@ Conventions specific to `rpg2` (private-s3 source + shapefile format):
   absent, queries the data.gouv.fr API (`dataset 616d6531c2951bbe8bd97771`) to download the
   national GPKG (2021+) or SHP (2019-2020). If unavailable for the requested millesime,
   a `.no-bio` marker is written and `parcellesbio` is omitted from the PMTiles.
-- **(rpg1 / gpkg format) GeoPackage layer mapping**: PAC GPKG (located by glob `*_pac*.gpkg`) →
+- **(rpg1 convert) GeoPackage layer mapping**: PAC GPKG (located by glob `*_pac*.gpkg`) →
   `parcelles`, BIO GPKG (fixed path `bio.gpkg`) → `parcellesbio`. The layer name within each GPKG
   is detected dynamically via `ogrinfo`. Field names vary across millesimes (UPPERCASE pre-2024,
   lowercase 2024+) — `convert.sh` normalizes all field names to lowercase via a dynamic SQL
   SELECT. Layers absent from a given millesime are silently omitted from the PMTiles (no error);
-  a warning is printed if the critical `parcelles` layer is missing.
+  a warning is printed if the critical `parcelles` layer is missing. The PAC layer already carries
+  a native `code_group`/`id_parcel` (IGN standard fields), passed through as-is; only the BIO
+  branch (data.gouv.fr schema) needs the `CODE_CULTU` → `code_group` `CASE` (generated from
+  `inertia/data/cultures.json`, same logic as `rpg2`) and a derived `id_parcel` (`gid`/`rowid`
+  fallback, since that schema has no parcel ID field either).
 
 ## Known Pitfalls
 
@@ -213,22 +214,20 @@ Conventions specific to `rpg2` (private-s3 source + shapefile format):
 1. Add `pipelines/<pipeline>.yaml`, following the pattern in `pipelines/rpg2.yaml` (uses the
    `shell` kit per step, `uses: build-pmtiles` / `uses: upload` for the shared tail — see
    "Pipeline definition pattern" above).
-2. Reuse existing scripts where possible: if the new pipeline fetches data the same way an
+2. Reuse existing source scripts where possible: if the new pipeline fetches data the same way an
    existing pipeline does (same network access pattern), reuse `scripts/sources/<source>/*.sh`
-   as-is; if it produces the same raw data format, reuse `scripts/formats/<format>/convert.sh`
-   as-is. Only add a new `scripts/sources/<source>/*.sh` or `scripts/formats/<format>/*.sh` when
-   neither exists yet. The `convert` step must produce `/output/parcelles.fgb` (required) and
-   optionally `/output/parcellesbio.fgb`, both EPSG:4326 with the unified schema (`id_parcel`,
-   `code_group`, `surf_parc`, `code_cultu`, …) — see `scripts/formats/gpkg/convert.sh` or
-   `scripts/formats/shapefile/convert.sh` for reference.
-3. Add `scripts/<pipeline>/setup.sh` for pipeline-specific config resolution/validation (which
-   millesime → which URL, which env vars are required, etc.) — see `scripts/rpg1/setup.sh` or
-   `scripts/rpg2/setup.sh` for reference.
+   as-is. Only add a new `scripts/sources/<source>/*.sh` when none of the existing ones fit.
+3. Add `scripts/<pipeline>/setup.sh` (config resolution/validation — which millesime → which URL,
+   which env vars are required, etc.) and `scripts/<pipeline>/convert.sh` (own conversion logic,
+   even if it starts from a raw format another pipeline already handles — see
+   `scripts/rpg1/convert.sh` or `scripts/rpg2/convert.sh` for reference). The `convert` step must
+   produce `/output/parcelles.fgb` (required) and optionally `/output/parcellesbio.fgb`, both
+   EPSG:4326 with the unified schema (`id_parcel`, `code_group`, `surf_parc`, `code_cultu`, …).
 4. If the pipeline needs per-millesime config, add a `sources.<source>` block to `config.yaml`
    (keyed by data source, not by pipeline name — reuse the existing block if the source already
    has one). Otherwise `sources.<source>: {}` is enough — `run.sh` only needs
    `pipelines/<pipeline>.yaml` to exist to route to it (`./run.sh <pipeline> <MILLESIME>`).
-5. No changes needed to `run.sh`, `kits/`, or `scripts/common/` — those are source/format-agnostic.
+5. No changes needed to `run.sh`, `kits/`, or `scripts/common/` — those are source-agnostic.
 
 ## Adding a New Millesime (`rpg1` pipeline)
 

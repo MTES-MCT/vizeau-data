@@ -72,7 +72,7 @@ steps:
       packages: [jq]
       run: bash /app/convert.sh
     mounts:
-      - host: ../scripts/formats/shapefile/convert.sh
+      - host: ../scripts/rpg2/convert.sh
         container: /app/convert.sh
       - host: ../cultures.json
         container: /app/cultures.json
