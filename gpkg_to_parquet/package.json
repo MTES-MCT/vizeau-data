@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "scripts": {
+    "convert": "node convert_gpkg_to_parquet.js"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "^1.4.4-r.2"
+  }
+}
