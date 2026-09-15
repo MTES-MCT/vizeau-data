@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file=.env generate_aac_infos.js"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "^1.4.4-r.2"
+  }
+}

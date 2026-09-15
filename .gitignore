@@ -1,5 +1,9 @@
 .idea
 tmp
-pmtiles_generator/.env
+*/.env
 pmtiles_generator/output/*
 pmtiles_generator/workdir/*
+gpkg_to_parquet/node_modules
+
+*.parquet
+*.gpkg
