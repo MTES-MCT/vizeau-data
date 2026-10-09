@@ -225,8 +225,6 @@ function buildInstallations(captages, bssPrioritaires) {
         usage: ref.t1_ins_usage_lib,
         etat: ref.t1_ins_etat_lib,
         ...(ref.t2_code_ppe ? { code_ppe: ref.t2_code_ppe } : {}),
-        ...(ref.t2_code_ppr ? { code_ppr: ref.t2_code_ppr } : {}),
-        ...(ref.t2_code_ppi ? { code_ppi: ref.t2_code_ppi } : {}),
       }
 
       const allBss = [...membres.values()].map((m) => m.t1_ins_code_bss).filter(Boolean)
@@ -259,14 +257,6 @@ function buildSauResult(rows, surfKey, nbKey, totalM2) {
   }
 
   return result
-}
-
-function buildCulturesEvolutionOutput(cdaac, nom, repartition) {
-  return {
-    aac: String(cdaac),
-    nom,
-    repartition,
-  }
 }
 
 // ─── Étape 2 : génération des fiches AAC ─────────────────────────────────────
@@ -662,7 +652,7 @@ for (const [cdaac, aac] of aacMap) {
           surface: Math.round(surf_m2 / 100) / 100,
         })),
       },
-      cultures_evolution: buildCulturesEvolutionOutput(cdaac, aac.nom, culturesEvolution),
+      cultures_evolution: { repartition: culturesEvolution },
       installations,
     }) + '\n'
   if (!ndjsonStream.write(line)) {
@@ -684,12 +674,16 @@ console.log(`  ${nbFiches} fiches assemblées en ${Date.now() - t}ms`)
 console.log('\n═══ Étape 3 : push vers S3 ═══\n')
 t = Date.now()
 
+// Tri par code pour getByCode et getInstallationCodesByAacCode. Pas de
+// ROW_GROUP_SIZE : le fichier (~1 700 lignes) tient de toute façon en un seul
+// row group, DuckDB découpant par paquets de 2 048 lignes.
 process.stdout.write(`  ↑ ${s3dest}...`)
 await conn.run(`
   COPY (
     SELECT * FROM read_json_auto('${tmpNdjson}', maximum_object_size = 10485760)
+    ORDER BY TRY_CAST(code AS INTEGER), code
   )
-  TO '${s3dest}' (FORMAT PARQUET, CODEC 'ZSTD', ROW_GROUP_SIZE 500)
+  TO '${s3dest}' (FORMAT PARQUET, CODEC 'ZSTD')
 `)
 unlinkSync(tmpNdjson)
 

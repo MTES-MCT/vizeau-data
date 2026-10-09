@@ -105,7 +105,7 @@ Pour repartir de zéro : supprimer `data/` (sources) et/ou `data/cache/` (agrég
 
 ## Sortie
 
-Fichier `aac.parquet` (configurable via `S3_OUTPUT_KEY`) poussé sur S3, contenant une ligne par AAC avec les champs suivants :
+Fichier `aac.parquet` (configurable via `S3_OUTPUT_KEY`) poussé sur S3 (ZSTD), contenant une ligne par AAC, triée par `code` (ordre numérique, codes non numériques en fin), avec les champs suivants :
 
 - `nom`, `code`, `prioritaire`, `date_creation`, `date_maj`, `bbox`, `surface`
 - `nb_captages_actifs`, `nb_installations`
@@ -114,5 +114,5 @@ Fichier `aac.parquet` (configurable via `S3_OUTPUT_KEY`) poussé sur S3, contena
 - `surface_agricole_utile` — SAU par groupe de culture (nb parcelles, surface, % SAU)
 - `surface_agricole_ppe` / `surface_agricole_ppr` — idem dans les zones de protection
 - `surface_agricole_bio` — nb parcelles, surface et part bio
-- `installations` — captage de référence, captages rattachés, statut prioritaire
-- `cultures_evolution` — objet `{ aac, nom, repartition }` strictement aligné avec l'ancien script, où `repartition` contient les années `2020..2024` et, pour chaque groupe, `{ surface_ha, nb_parcelles }`
+- `installations` — captage de référence (dont le code PPE de sa zone de protection), captages rattachés, statut prioritaire. Les codes PPR et PPI servent à rattacher les captages aux AAC mais ne sont pas écrits dans la sortie
+- `cultures_evolution` — objet `{ repartition }`, où `repartition` contient les années `2020..2024` et, pour chaque groupe, `{ surface_ha, nb_parcelles }`

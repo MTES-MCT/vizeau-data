@@ -20,6 +20,10 @@ Génère `captages.parquet`, le fichier de recensement des captages d'eau publiq
 
 Pipeline Node.js/DuckDB qui construit une **fiche descriptive par AAC** (surface, emprise, communes, installations de captage, répartition des cultures sur la SAU/PPE/PPR, part du bio, évolution annuelle des cultures) à partir des fichiers Parquet stockés sur S3, puis publie le résultat en `aac.parquet` sur S3.
 
+### [`analyses_parquet_generator`](analyses_parquet_generator/README.md)
+
+Script Node.js/DuckDB qui génère `analyses_robinet.parquet` : une ligne par **résultat d'analyse réalisée sur un captage**, à partir des fichiers du contrôle sanitaire de l'eau (data.gouv.fr), enrichie avec le libellé du paramètre, les limites et références de qualité et le statut de captage prioritaire.
+
 ## Enchaînement
 
 ```
@@ -28,4 +32,6 @@ gpkg_to_parquet ──────────────┐
 captages_parquet_generator ───┘
 
 pmtiles_generator ──► RPG en PMTiles (S3)
+
+analyses_parquet_generator ──► analyses_robinet.parquet
 ```

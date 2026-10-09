@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env generate_analyses_parquet.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "^1.4.4-r.2"
+  }
+}
