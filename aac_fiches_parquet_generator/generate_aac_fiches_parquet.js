@@ -21,6 +21,8 @@
  *   DUCKDB_THREADS   Threads DuckDB (défaut : nb de cœurs - 1)
  *   RPG_CONCURRENCY  Nb d'années RPG téléchargées en parallèle en phase 4 (défaut : 3)
  *   RPG_REFRESH      À 1, ignore le cache local des agrégats RPG annuels (phase 4)
+ *   S3_OVERWRITE     À 1, écrase le fichier de destination s'il existe déjà sans
+ *                    demander confirmation (requis hors terminal interactif)
  */
 
 import { DuckDBInstance } from '@duckdb/node-api'
@@ -29,6 +31,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { once } from 'events'
 import { cpus } from 'os'
+import { createInterface } from 'readline/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DATA = join(__dirname, 'data')
@@ -49,6 +52,7 @@ const S3_OUTPUT_KEY = process.env.S3_OUTPUT_KEY || 'aac.parquet'
 const DUCKDB_THREADS = Number(process.env.DUCKDB_THREADS) || Math.max(4, cpus().length - 1)
 const RPG_CONCURRENCY = Number(process.env.RPG_CONCURRENCY) || 3
 const RPG_REFRESH = process.env.RPG_REFRESH === '1'
+const S3_OVERWRITE = process.env.S3_OVERWRITE === '1'
 
 if (!S3_BUCKET || !S3_ACCESS || !S3_SECRET) {
   console.error('Variables manquantes : S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY')
@@ -88,6 +92,31 @@ async function newConnection() {
 
 const conn = await newConnection()
 const q = (sql) => conn.runAndReadAll(sql).then((r) => r.getRowObjects())
+
+// ─── Vérification de la destination ──────────────────────────────────────────
+
+// Faite avant tout calcul pour ne pas découvrir le conflit après de longues
+// minutes de traitement. Hors terminal interactif, on refuse d'écraser sans
+// S3_OVERWRITE=1. Sans joker, glob() renvoie le chemin tel quel même s'il
+// n'existe pas : on liste donc le préfixe et on filtre sur le chemin exact.
+const destExists =
+  (await q(`SELECT file FROM glob('${sqlEscape(s3dest)}*') WHERE file = '${sqlEscape(s3dest)}'`))
+    .length > 0
+
+if (destExists && !S3_OVERWRITE) {
+  if (!process.stdin.isTTY) {
+    console.error(`${s3dest} existe déjà. Poser S3_OVERWRITE=1 pour l'écraser.`)
+    process.exit(1)
+  }
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  const answer = await rl.question(`${s3dest} existe déjà. L'écraser ? (o/N) `)
+  rl.close()
+  if (!/^(o|oui|y|yes)$/i.test(answer.trim())) {
+    console.log('Abandon : le fichier distant est conservé.')
+    process.exit(0)
+  }
+  console.log()
+}
 
 // Exécute `fn` sur `items` avec au plus `limit` tâches simultanées.
 async function runPool(items, limit, fn) {

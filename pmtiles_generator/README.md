@@ -32,6 +32,7 @@ cp .env.example .env
 | `S3_ACCESS_KEY_ID`     | Clé d'accès S3                                                       |
 | `S3_SECRET_ACCESS_KEY` | Secret S3                                                            |
 | `S3_SOURCE_BUCKET`     | Bucket source des shapefiles (source `rpg2` uniquement, même compte) |
+| `S3_OVERWRITE`         | À `1`, écrase le PMTiles distant sans confirmation (optionnel)       |
 
 Les millésimes disponibles et leurs URLs sources sont définis dans `config.yaml`, sous
 `sources.open_data.millesimes`.
@@ -52,6 +53,12 @@ Les millésimes disponibles et leurs URLs sources sont définis dans `config.yam
 Le workspace (`rpg-<source>-<MILLESIME>`) est automatiquement supprimé après un upload réussi.
 En cas d'échec, il est conservé pour permettre le debug (`tylt show rpg-rpg1-2024`,
 `tylt logs rpg-rpg1-2024 <étape>`).
+
+Si le PMTiles de destination existe déjà sur S3, `run.sh` demande confirmation avant de lancer
+la pipeline (réponse `o` pour écraser, sinon abandon). Hors terminal interactif, il s'arrête en
+erreur, sauf si `S3_OVERWRITE=1` est posé (dans `.env` ou en préfixe :
+`S3_OVERWRITE=1 ./run.sh rpg1 2024`). L'étape `upload` refait la vérification et échoue plutôt
+que d'écraser sans `S3_OVERWRITE=1`, y compris en appel direct à `tylt run`.
 
 ### Sans upload S3 (pipeline complète, upload sauté)
 

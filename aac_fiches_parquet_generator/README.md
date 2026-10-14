@@ -46,6 +46,7 @@ S3_OUTPUT_KEY=aac.parquet     # Clé du fichier de sortie (défaut : aac.parquet
 DUCKDB_THREADS=               # Threads DuckDB (défaut : nb de cœurs - 1)
 RPG_CONCURRENCY=3             # Années RPG téléchargées en parallèle (phase 4)
 RPG_REFRESH=                  # À 1, recalcule les agrégats RPG annuels en cache
+S3_OVERWRITE=                 # À 1, écrase la destination sans confirmation
 ```
 
 ## Utilisation
@@ -55,6 +56,8 @@ npm start
 # ou directement :
 node --env-file=.env generate_aac_fiches_parquet.js
 ```
+
+Si le fichier de destination existe déjà sur S3, le script demande confirmation avant de lancer le traitement (réponse `o` pour écraser, sinon abandon). Hors terminal interactif (CI, cron…), il s'arrête en erreur, sauf si `S3_OVERWRITE=1` est posé.
 
 ## Fichiers source attendus sur S3
 
