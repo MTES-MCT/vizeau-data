@@ -3,7 +3,7 @@
  * de Hilbert, et l'écrit dans le même dossier que ce script.
  *
  * Usage :
- *   node convert_gpkg_to_parquet.js [--input <chemin/AAC.gpkg>] [--output <chemin/aac_hilbert.parquet>]
+ *   node generate_aac_geometries_parquet.js [--input <chemin/AAC.gpkg>] [--output <chemin/aac_hilbert.parquet>]
  *
  * Valeurs par défaut :
  *   --input  AAC.gpkg             (dans le même dossier que ce script)
@@ -68,6 +68,27 @@ await run("INSTALL parquet; LOAD parquet;");
 // Bbox France entière (métropole + DROM) pour normaliser ST_Hilbert
 const BBOX = "{'min_x': -61.5, 'min_y': -12.9, 'max_x': 55.9, 'max_y': 51.5}::BOX_2D";
 
+// Nettoyage des libellés du GPKG (lus de l'intérieur vers l'extérieur) :
+//   - apostrophe typographique ’ → '
+//   - apostrophes échappées plusieurs fois ('' ou '''') → '
+//   - tiret long – et tiret collé d'un seul côté (« Brossac -puits ») → espacés des deux côtés
+//   - espace manquant avant une parenthèse (« REYNIERES(LES) »)
+//   - espaces multiples réduits, espaces de début/fin supprimés
+const NOM = String.raw`
+  trim(regexp_replace(
+    regexp_replace(
+      regexp_replace(
+        regexp_replace(
+          regexp_replace(
+            regexp_replace(
+              replace(NomDeAACAdministratif, '’', ''''),
+            '''{2,}', '''', 'g'),
+          '\s*–\s*', ' – ', 'g'),
+        ' -(\S)', ' - \1', 'g'),
+      '(\S)- ', '\1 - ', 'g'),
+    '([^\s(])\(', '\1 (', 'g'),
+  '\s+', ' ', 'g'))`;
+
 console.log(`Lecture : ${input}`);
 
 const tmpOutput = output + ".tmp.parquet";
@@ -78,7 +99,7 @@ await run(`
     WITH src AS (
       SELECT
         CAST(CdAAC AS VARCHAR)                       AS cdaac,
-        NomDeAACAdministratif                        AS nom,
+        ${NOM}                                       AS nom,
         CAST(DateCreationAAC AS VARCHAR)             AS datecreati,
         CAST(DateMajAAC AS VARCHAR)                  AS datemajaac,
         -- Le GPKG contient des Polygon ; on force MultiPolygon pour cohérence

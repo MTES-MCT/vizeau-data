@@ -3,12 +3,12 @@
  * Génère un `captages.parquet` candidat à partir du référentiel CSV
  * (ref_captages_25avril2025) plutôt que de la source privée ARS actuelle.
  *
- * ⚠️ Script de transition, PAS branché sur le pipeline `generate_aac_infos.js`.
+ * ⚠️ Script de transition, PAS branché sur le pipeline `generate_aac_fiches_parquet.js`.
  * Il écrit `data/captages_new.parquet` (fichier séparé) pour permettre une
  * comparaison avant bascule — cf. `csv-to-parquet-schema-mapping.md`.
  *
  * Ne mappe QUE les colonnes de `captages.parquet` réellement lues par
- * `generate_aac_infos.js` (voir mapping ci-dessus pour le détail
+ * `generate_aac_fiches_parquet.js` (voir mapping ci-dessus pour le détail
  * colonne par colonne et les approximations/limites connues) :
  *
  *   t1_code_ins, t1_ins_nom, t1_com_nom, t1_com_insee, t1_ins_etat_lib,
@@ -117,7 +117,7 @@ console.log(`  ${nbCapRaw} lignes chargées depuis ref_cap_avr25 (${Date.now() -
 // Un même code_installation peut apparaître dans plusieurs code_mca_national
 // (mélanges qui se recoupent, cas rare) : on ne garde qu'un seul rattachement
 // par captage, choisi arbitrairement (le plus petit ref_code), pour rester
-// 1:1 avec le schéma attendu par `generate_aac_infos.js`.
+// 1:1 avec le schéma attendu par `generate_aac_fiches_parquet.js`.
 t = Date.now()
 await run(`
   CREATE TABLE cap_ref_map AS
@@ -168,7 +168,7 @@ console.log(`  Points de captage projetés en WGS84 (${Date.now() - t}ms)`)
 // lien direct dans le CSV (cf. csv-to-parquet-schema-mapping.md). En cas de
 // chevauchement de zones (rare), on ne garde qu'un seul code par captage,
 // choisi arbitrairement (le plus petit), pour rester 1:1 avec le schéma
-// attendu par `generate_aac_infos.js`.
+// attendu par `generate_aac_fiches_parquet.js`.
 async function buildPpMap(table, outCol) {
   t = Date.now()
   await run(`

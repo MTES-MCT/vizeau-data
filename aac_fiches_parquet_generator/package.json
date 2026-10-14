@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "start": "node --env-file=.env generate_aac_infos.js"
+    "start": "node --env-file=.env generate_aac_fiches_parquet.js"
   },
   "dependencies": {
     "@duckdb/node-api": "^1.4.4-r.2"

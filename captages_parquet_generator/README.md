@@ -2,7 +2,7 @@
 
 ## Contexte
 
-`captages.parquet` — utilisé par `../aac_parquet_generator/generate_aac_infos.js`
+`captages.parquet` — utilisé par `../aac_fiches_parquet_generator/generate_aac_fiches_parquet.js`
 pour construire la liste des installations de captage de chaque fiche AAC —
 est aujourd'hui téléchargé tel quel depuis S3, sans processus de génération
 documenté dans ce dépôt : c'est un export brut d'une source privée
@@ -21,13 +21,13 @@ approximations connues) est dans `csv-to-parquet-schema-mapping.md` — ce
 document-ci résume le processus dans son ensemble : entrées, sorties,
 contenu.
 
-Ce dossier est **totalement indépendant** de `aac_parquet_generator/` : ses
+Ce dossier est **totalement indépendant** de `aac_fiches_parquet_generator/` : ses
 propres `package.json`/`node_modules` et son propre `data/` (voir ci-dessous)
 ne dépendent d'aucun fichier généré ou téléchargé par
-`generate_aac_infos.js`. Seule la comparaison avec l'ancien `captages.parquet`
+`generate_aac_fiches_parquet.js`. Seule la comparaison avec l'ancien `captages.parquet`
 (scripts `compare_captages.mjs`/`investigate_pp_coverage.mjs`) nécessite d'y
 avoir déposé une copie locale de ce fichier (cf. plus bas) — elle n'est pas
-lue directement depuis `aac_parquet_generator/data/`.
+lue directement depuis `aac_fiches_parquet_generator/data/`.
 
 ## Installation
 
@@ -64,7 +64,7 @@ node generate_captages_parquet.js
 ```
 
 Aucune variable d'environnement requise (contrairement à
-`generate_aac_infos.js`, qui a besoin des identifiants S3).
+`generate_aac_fiches_parquet.js`, qui a besoin des identifiants S3).
 
 ## Artefact produit
 
@@ -74,23 +74,23 @@ l'ancien `captages.parquet` (scripts `compare_captages.mjs` et
 `investigate_pp_coverage.mjs`), y déposer une copie locale :
 
 ```bash
-cp ../aac_parquet_generator/data/captages.parquet data/captages.parquet
+cp ../aac_fiches_parquet_generator/data/captages.parquet data/captages.parquet
 ```
 
 ### À quoi il sert
 
-Ce n'est **pas encore** branché sur `generate_aac_infos.js`. C'est une étape
+Ce n'est **pas encore** branché sur `generate_aac_fiches_parquet.js`. C'est une étape
 intermédiaire, destinée à :
 1. Vérifier que le schéma produit est compatible avec les requêtes du
    pipeline (validé : la requête de rattachement captage→AAC de
-   `generate_aac_infos.js` tourne sans erreur dessus, cf. tests manuels).
+   `generate_aac_fiches_parquet.js` tourne sans erreur dessus, cf. tests manuels).
 2. Comparer son contenu avec `captages.parquet` (nombre de lignes, écarts de
    valeurs) avant toute décision de bascule.
 
 ### Ce qu'il contient
 
 Une ligne par captage (`code_installation` du CSV), avec uniquement les
-colonnes de `captages.parquet` réellement lues par `generate_aac_infos.js`
+colonnes de `captages.parquet` réellement lues par `generate_aac_fiches_parquet.js`
 (les ~70 autres colonnes du fichier actuel, non utilisées par le pipeline, ne
 sont pas reproduites) :
 
@@ -143,7 +143,7 @@ arbitrairement).
 ## Comparaison champ par champ avec `captages.parquet`
 
 Script : `compare_captages.mjs` (dédup identique à celle de
-`generate_aac_infos.js` des deux côtés, jointure sur `t1_code_ins`).
+`generate_aac_fiches_parquet.js` des deux côtés, jointure sur `t1_code_ins`).
 
 ### Couverture
 
@@ -326,5 +326,5 @@ zones absentes des fichiers (cause 1), qui reste la limite la plus dure.
    777 captages actifs présents seulement dans le nouveau, pour comprendre
    ces écarts d'exhaustivité.
 5. Une fois ces points levés, brancher la génération dans
-   `generate_aac_infos.js` (ou en amont, comme étape de préparation avant
+   `generate_aac_fiches_parquet.js` (ou en amont, comme étape de préparation avant
    upload S3), en remplacement du téléchargement direct de la source privée.

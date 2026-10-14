@@ -5,7 +5,7 @@
  *   2. Génère les fiches AAC (5 phases DuckDB + assemblage JS)
  *   3. Pousse le fichier aac.parquet résultant sur S3
  *
- * Usage : node --env-file=.env generate_aac_infos.js
+ * Usage : node --env-file=.env generate_aac_fiches_parquet.js
  *
  * Variables d'environnement :
  *   S3_BUCKET        Bucket source (fichiers input) — requis

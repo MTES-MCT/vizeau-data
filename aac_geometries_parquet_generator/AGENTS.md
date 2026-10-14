@@ -1,22 +1,20 @@
-# Instructions pour agents IA — gpkg_to_parquet
+# Instructions pour agents IA — aac_geometries_parquet_generator
 
 ## Contexte
 
-Ce dossier contient un **script de conversion one-shot** : `convert_gpkg_to_parquet.js`.
+Ce dossier contient un **script de conversion one-shot** : `generate_aac_geometries_parquet.js`.
 
 Il lit un fichier GeoPackage (`AAC.gpkg`) local, le convertit en GeoParquet trié par courbe de Hilbert via DuckDB, et écrit le résultat dans le même dossier. Aucune dépendance réseau ni credentials ne sont requis.
-
-C'est le pendant local de `geojson_to_parquet/convert_to_parquet.js` (qui lui opère via S3).
 
 ## Commande
 
 ```bash
-npm run convert
+npm start
 # ou
-node convert_gpkg_to_parquet.js [--input AAC.gpkg] [--output aac_hilbert.parquet]
+node generate_aac_geometries_parquet.js [--input AAC.gpkg] [--output aac_hilbert.parquet]
 ```
 
-## Architecture de convert_gpkg_to_parquet.js
+## Architecture de generate_aac_geometries_parquet.js
 
 Le script est structuré en 4 sections dans cet ordre :
 
@@ -36,7 +34,7 @@ Le script est structuré en 4 sections dans cet ordre :
 La conversion écrit d'abord un fichier temporaire avec la colonne `hilbert_idx`, puis en recrée un second sans elle. Ne pas fusionner en une seule passe : DuckDB ne peut pas à la fois trier et exclure la colonne de tri dans un seul `COPY`.
 
 ### Géométries
-- Le GPKG source contient des `Polygon` ; ils sont convertis en `MultiPolygon` via `ST_Multi()` pour cohérence avec le GeoJSON source utilisé par `geojson_to_parquet`
+- Le GPKG source contient des `Polygon` ; ils sont convertis en `MultiPolygon` via `ST_Multi()` pour avoir un type géométrique homogène
 - CRS conservé : WGS84 (OGC:CRS84)
 - La BBox de normalisation Hilbert couvre la France entière (métropole + DROM) : `min_x: -61.5, min_y: -12.9, max_x: 55.9, max_y: 51.5`
 
@@ -50,6 +48,8 @@ Le GPKG a des noms de colonnes différents du GeoJSON source. La correspondance 
 | `DateCreationAAC` (Date) | `datecreati` (VARCHAR) |
 | `DateMajAAC` (Date) | `datemajaac` (VARCHAR) |
 | `geom` (Polygon) | `geom` (MultiPolygon) |
+
+`nom` est nettoyé à la conversion (expression `NOM`) : apostrophes échappées (`''`, `''''`) et typographiques (`’`) ramenées à `'`, tirets et parenthèses mal espacés corrigés, espaces multiples réduits et trim.
 
 ## Pièges connus
 
