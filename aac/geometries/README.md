@@ -23,7 +23,7 @@ npm run geometries
 node geometries/generate_aac_geometries_parquet.js
 ```
 
-Le fichier `output/aac_hilbert.parquet` est produit, et copié dans `../data/` où `../fiches` le lit. L'upload sur S3 n'est utile que pour le partager avec l'équipe.
+Le fichier `output/aac_hilbert.parquet` est produit, et copié dans `../data/` où `../fiches` le lit. Pour le partager avec l'équipe : `npm run upload -- geometries` depuis `aac/`.
 
 ### Chemins personnalisés
 

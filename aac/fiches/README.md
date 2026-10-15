@@ -1,6 +1,6 @@
 # Génération des fiches AAC
 
-Pipeline Node.js qui génère des fiches descriptives pour chaque **Aire d'Alimentation de Captage (AAC)** à partir de données géospatiales stockées sur S3, et publie le résultat en Parquet sur S3.
+Pipeline Node.js qui génère des fiches descriptives pour chaque **Aire d'Alimentation de Captage (AAC)** à partir de données géospatiales stockées sur S3. Le résultat est écrit en Parquet en local ; l'envoi sur S3 se fait à part avec `npm run upload`.
 
 ## Fonctionnement
 
@@ -13,7 +13,7 @@ Le pipeline s'exécute en 3 étapes :
    - Phase 3 : parcelles RPG toutes cultures (scan spatial)
    - Phase 4 : évolution annuelle des cultures (`RPG_YYYY.parquet` depuis S3, mis en cache)
    - Phase 5 : assemblage des fiches JSON
-3. **Écriture et push S3** — sérialise les fiches en Parquet dans `output/` (avec une copie dans `aac/data/`), puis pousse le fichier vers S3
+3. **Écriture** — sérialise les fiches en Parquet dans `output/`, avec une copie dans `aac/data/`
 
 Chaque fiche AAC contient : nom, code, surface, emprise (bbox), communes recouvertes, installations de captage, répartition des cultures (SAU globale, PPE, PPR), part de l'agriculture biologique et évolution annuelle des cultures.
 
@@ -42,12 +42,9 @@ S3_ENDPOINT=s3.fr-par.scw.cloud  # Endpoint (défaut : s3.fr-par.scw.cloud)
 S3_PREFIX=                    # Préfixe des fichiers source (optionnel)
 S3_BIO_DIR=bio                # Répertoire S3 des fichiers rpg_bio_YYYY.parquet
 S3_RPG_DIR=RPG                # Répertoire S3 des RPG annuels RPG_YYYY.parquet
-S3_OUTPUT_BUCKET=             # Bucket de destination (défaut : S3_BUCKET)
-S3_OUTPUT_KEY=aac.parquet     # Clé du fichier de sortie (défaut : aac.parquet)
 DUCKDB_THREADS=               # Threads DuckDB (défaut : nb de cœurs - 1)
 RPG_CONCURRENCY=3             # Années RPG téléchargées en parallèle (phase 4)
 RPG_REFRESH=                  # À 1, recalcule les agrégats RPG annuels en cache
-S3_OVERWRITE=                 # À 1, écrase la destination sans confirmation
 ```
 
 ## Utilisation
@@ -59,9 +56,7 @@ npm run fiches
 node --env-file=.env fiches/generate_aac_fiches_parquet.js
 ```
 
-Si le fichier de destination existe déjà sur S3, le script demande confirmation avant de lancer le traitement (réponse `o` pour écraser). En cas de refus, ou hors terminal interactif (CI, cron…) sans `S3_OVERWRITE=1`, le traitement est mené jusqu'au bout mais le fichier n'est écrit qu'en local.
-
-Dans tous les cas, le fichier final est écrit dans `output/` avant l'upload : il reste disponible même si l'upload est ignoré ou échoue.
+Pour publier `output/aac.parquet` sur S3 : `npm run upload -- fiches` depuis `aac/` (voir [`../README.md`](../README.md#upload-sur-s3)).
 
 ## Fichiers source attendus sur S3
 
@@ -112,7 +107,7 @@ Pour repartir de zéro : supprimer les sources de `aac/data/` et/ou `aac/data/ca
 
 ## Sortie
 
-Fichier `aac.parquet` (configurable via `S3_OUTPUT_KEY`) écrit dans `output/` et poussé sur S3 (ZSTD), contenant une ligne par AAC, triée par `code` (ordre numérique, codes non numériques en fin), avec les champs suivants :
+Fichier `aac.parquet` écrit dans `output/` (ZSTD), contenant une ligne par AAC, triée par `code` (ordre numérique, codes non numériques en fin), avec les champs suivants :
 
 - `nom`, `code`, `prioritaire`, `date_creation`, `date_maj`, `bbox`, `surface`
 - `nb_captages_actifs`, `nb_installations`

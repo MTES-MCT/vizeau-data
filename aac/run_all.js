@@ -2,14 +2,14 @@
  * Régénère toutes les données AAC à partir de data/AAC.gpkg, dans l'ordre :
  *   1. geometries → geometries/output/aac_hilbert.parquet (copie dans data/)
  *   2. zonage     → zonage/output/zonage.pmtiles (copie dans data/)
- *   3. fiches     → fiches/output/aac.parquet (copie dans data/) + S3
+ *   3. fiches     → fiches/output/aac.parquet (copie dans data/)
  *                   (lit data/aac_hilbert.parquet produit à l'étape 1)
  *
  * Usage :
  *   npm run all
  *
- * L'upload de data/aac_hilbert.parquet sur S3, pour le partager avec l'équipe,
- * reste manuel.
+ * Rien n'est envoyé sur S3 : pour partager les fichiers produits avec l'équipe,
+ * lancer ensuite `npm run upload`.
  */
 
 import { execFileSync } from "child_process";

@@ -4,8 +4,8 @@
  *   1. Télécharge depuis S3 vers aac/data/ les fichiers source absents
  *      (aac_hilbert.parquet y est déjà si geometries a été lancé)
  *   2. Génère les fiches AAC (5 phases DuckDB + assemblage JS)
- *   3. Écrit le fichier aac.parquet dans fiches/output/ (copie dans aac/data/)
- *      puis le pousse sur S3
+ *   3. Écrit le fichier aac.parquet dans fiches/output/ (copie dans aac/data/).
+ *      L'envoi sur S3 se fait à part : npm run upload
  *
  * Usage : node --env-file=.env generate_aac_fiches_parquet.js
  *
@@ -18,14 +18,9 @@
  *   S3_PREFIX        Préfixe des fichiers source dans le bucket (défaut : vide)
  *   S3_BIO_DIR       Répertoire S3 des fichiers RPG bio annuels (défaut : bio)
  *   S3_RPG_DIR       Répertoire S3 des fichiers RPG annuels (défaut : RPG)
- *   S3_OUTPUT_BUCKET Bucket de destination (défaut : S3_BUCKET)
- *   S3_OUTPUT_KEY    Clé de destination du fichier (défaut : aac.parquet)
  *   DUCKDB_THREADS   Threads DuckDB (défaut : nb de cœurs - 1)
  *   RPG_CONCURRENCY  Nb d'années RPG téléchargées en parallèle en phase 4 (défaut : 3)
  *   RPG_REFRESH      À 1, ignore le cache local des agrégats RPG annuels (phase 4)
- *   S3_OVERWRITE     À 1, écrase le fichier de destination s'il existe déjà sans
- *                    demander confirmation. Sinon, hors terminal interactif ou en
- *                    cas de refus, le fichier n'est écrit qu'en local.
  */
 
 import { DuckDBInstance } from '@duckdb/node-api'
@@ -34,7 +29,6 @@ import { join, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 import { once } from 'events'
 import { cpus } from 'os'
-import { createInterface } from 'readline/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DATA = join(__dirname, '..', 'data')
@@ -50,12 +44,9 @@ const S3_ENDPOINT = process.env.S3_ENDPOINT || 's3.fr-par.scw.cloud'
 const S3_PREFIX = process.env.S3_PREFIX || ''
 const S3_BIO_DIR = process.env.S3_BIO_DIR || 'bio'
 const S3_RPG_DIR = process.env.S3_RPG_DIR || 'RPG'
-const S3_OUTPUT_BUCKET = process.env.S3_OUTPUT_BUCKET || S3_BUCKET
-const S3_OUTPUT_KEY = process.env.S3_OUTPUT_KEY || 'aac.parquet'
 const DUCKDB_THREADS = Number(process.env.DUCKDB_THREADS) || Math.max(4, cpus().length - 1)
 const RPG_CONCURRENCY = Number(process.env.RPG_CONCURRENCY) || 3
 const RPG_REFRESH = process.env.RPG_REFRESH === '1'
-const S3_OVERWRITE = process.env.S3_OVERWRITE === '1'
 
 if (!S3_BUCKET || !S3_ACCESS || !S3_SECRET) {
   console.error('Variables manquantes : S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY')
@@ -63,7 +54,6 @@ if (!S3_BUCKET || !S3_ACCESS || !S3_SECRET) {
 }
 
 const s3src = (name) => `s3://${S3_BUCKET}/${S3_PREFIX ? `${S3_PREFIX}/${name}` : name}`
-const s3dest = `s3://${S3_OUTPUT_BUCKET}/${S3_OUTPUT_KEY}`
 const sqlEscape = (value) => value.replace(/'/g, "''")
 
 // ─── DuckDB ───────────────────────────────────────────────────────────────────
@@ -95,34 +85,6 @@ async function newConnection() {
 
 const conn = await newConnection()
 const q = (sql) => conn.runAndReadAll(sql).then((r) => r.getRowObjects())
-
-// ─── Vérification de la destination ──────────────────────────────────────────
-
-// Faite avant tout calcul pour ne pas découvrir le conflit après de longues
-// minutes de traitement. Si l'écrasement n'est pas autorisé (refus, ou hors
-// terminal interactif sans S3_OVERWRITE=1), le traitement continue mais le
-// fichier n'est écrit qu'en local. Sans joker, glob() renvoie le chemin tel quel
-// même s'il n'existe pas : on liste donc le préfixe et on filtre sur le chemin exact.
-const destExists =
-  (await q(`SELECT file FROM glob('${sqlEscape(s3dest)}*') WHERE file = '${sqlEscape(s3dest)}'`))
-    .length > 0
-
-let upload = true
-
-if (destExists && !S3_OVERWRITE) {
-  if (process.stdin.isTTY) {
-    const rl = createInterface({ input: process.stdin, output: process.stdout })
-    const answer = await rl.question(`${s3dest} existe déjà. L'écraser ? (o/N) `)
-    rl.close()
-    upload = /^(o|oui|y|yes)$/i.test(answer.trim())
-  } else {
-    upload = false
-  }
-  if (!upload) {
-    console.log(`Le fichier distant est conservé : la sortie ne sera écrite qu'en local.`)
-  }
-  console.log()
-}
 
 // Exécute `fn` sur `items` avec au plus `limit` tâches simultanées.
 async function runPool(items, limit, fn) {
@@ -704,15 +666,13 @@ await new Promise((resolve, reject) => {
 
 console.log(`  ${nbFiches} fiches assemblées en ${Date.now() - t}ms`)
 
-// ─── Étape 3 : écriture Parquet locale et push S3 ────────────────────────────
+// ─── Étape 3 : écriture Parquet locale ───────────────────────────────────────
 
-console.log('\n═══ Étape 3 : écriture locale et push vers S3 ═══\n')
+console.log('\n═══ Étape 3 : écriture locale ═══\n')
 
-// Le fichier est toujours écrit dans fiches/output/, que l'upload ait lieu ou non
-// (refus d'écraser, échec réseau…).
 const OUTPUT = join(__dirname, 'output')
 mkdirSync(OUTPUT, { recursive: true })
-const localOutput = join(OUTPUT, basename(S3_OUTPUT_KEY))
+const localOutput = join(OUTPUT, 'aac.parquet')
 const tmpOutput = `${localOutput}.tmp`
 
 // Tri par code pour getByCode et getInstallationCodesByAacCode. Pas de
@@ -736,28 +696,5 @@ const dataCopy = join(DATA, basename(localOutput))
 copyFileSync(localOutput, dataCopy)
 console.log(`  ✓ copie : ${dataCopy}`)
 
-if (!upload) {
-  console.log(`\nTerminé → ${localOutput} (upload S3 ignoré)`)
-  process.exit(0)
-}
-
-t = Date.now()
-process.stdout.write(`  ↑ ${s3dest}...`)
-try {
-  await conn.run(`
-    COPY (
-      SELECT * FROM read_parquet('${localOutput}')
-      ORDER BY TRY_CAST(code AS INTEGER), code
-    )
-    TO '${s3dest}' (FORMAT PARQUET, CODEC 'ZSTD')
-  `)
-} catch (err) {
-  console.log()
-  console.error(`Échec de l'upload vers ${s3dest} : ${err.message}`)
-  console.error(`Le fichier reste disponible en local : ${localOutput}`)
-  process.exit(1)
-}
-
-console.log(` ${((Date.now() - t) / 1000).toFixed(1)}s`)
-console.log(`\nTerminé → ${localOutput} et ${s3dest}`)
+console.log(`\nTerminé → ${localOutput}`)
 process.exit(0)
