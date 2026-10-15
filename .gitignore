@@ -7,3 +7,5 @@ aac_geometries_parquet_generator/node_modules
 
 *.parquet
 *.gpkg
+zonage_pmtiles_generator/*.pmtiles
+zonage_pmtiles_generator/output

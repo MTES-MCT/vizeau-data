@@ -20,6 +20,10 @@ Génère `captages.parquet`, le fichier de recensement des captages d'eau publiq
 
 Pipeline Node.js/DuckDB qui construit une **fiche descriptive par AAC** (surface, emprise, communes, installations de captage, répartition des cultures sur la SAU/PPE/PPR, part du bio, évolution annuelle des cultures) à partir des fichiers Parquet stockés sur S3, puis publie le résultat en `aac.parquet` sur S3.
 
+### [`zonage_pmtiles_generator`](zonage_pmtiles_generator/README.md)
+
+Met à jour la couche **`aac`** du PMTiles de zonage de protection de l'eau (`ppr`, `ppe`, `aac`, `sage`) à partir du GeoPackage des AAC, via tippecanoe et tile-join. Les autres couches sont reprises telles quelles depuis un PMTiles existant, et les métadonnées (`generator_options`, `tilestats`, `strategies`) sont corrigées.
+
 ### [`analyses_parquet_generator`](analyses_parquet_generator/README.md)
 
 Script Node.js/DuckDB qui génère `analyses_robinet.parquet` : une ligne par **résultat d'analyse réalisée sur un captage**, à partir des fichiers du contrôle sanitaire de l'eau (data.gouv.fr), enrichie avec le libellé du paramètre, les limites et références de qualité et le statut de captage prioritaire.
@@ -32,6 +36,8 @@ aac_geometries_parquet_generator ──┐
 captages_parquet_generator ────────┘
 
 pmtiles_generator ──► RPG en PMTiles (S3)
+
+AAC.gpkg ──► zonage_pmtiles_generator ──► zonage.pmtiles (couche aac mise à jour)
 
 analyses_parquet_generator ──► analyses_robinet.parquet
 ```
