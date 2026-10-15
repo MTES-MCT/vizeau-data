@@ -1,4 +1,4 @@
-# aac_geometries_parquet_generator
+# aac/geometries
 
 Convertit un fichier **GeoPackage (GPKG) des Aires d'Alimentation de Captage** en fichier **GeoParquet trié par courbe de Hilbert**, optimisé pour des requêtes spatiales performantes via DuckDB.
 
@@ -7,21 +7,23 @@ Convertit un fichier **GeoPackage (GPKG) des Aires d'Alimentation de Captage** e
 - Node.js ≥ 22
 
 ```bash
+# depuis aac/
 npm install
 ```
 
 ## Usage
 
-1. Placer le fichier `AAC.gpkg` dans ce dossier
+1. Placer le fichier `AAC.gpkg` dans `../data/` (partagé avec `../zonage`)
 2. Lancer la conversion :
 
 ```bash
-npm start
+# depuis aac/
+npm run geometries
 # ou directement :
-node generate_aac_geometries_parquet.js
+node geometries/generate_aac_geometries_parquet.js
 ```
 
-Le fichier `aac_hilbert.parquet` est produit dans ce même dossier.
+Le fichier `output/aac_hilbert.parquet` est produit, et copié dans `../data/` où `../fiches` le lit. L'upload sur S3 n'est utile que pour le partager avec l'équipe.
 
 ### Chemins personnalisés
 

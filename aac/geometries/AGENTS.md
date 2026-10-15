@@ -1,17 +1,18 @@
-# Instructions pour agents IA — aac_geometries_parquet_generator
+# Instructions pour agents IA — aac/geometries
 
 ## Contexte
 
 Ce dossier contient un **script de conversion one-shot** : `generate_aac_geometries_parquet.js`.
 
-Il lit un fichier GeoPackage (`AAC.gpkg`) local, le convertit en GeoParquet trié par courbe de Hilbert via DuckDB, et écrit le résultat dans le même dossier. Aucune dépendance réseau ni credentials ne sont requis.
+Il lit le GeoPackage partagé `../data/AAC.gpkg`, le convertit en GeoParquet trié par courbe de Hilbert via DuckDB, et écrit le résultat dans `output/`, avec une copie dans `../data/`. Aucune dépendance réseau ni credentials ne sont requis.
 
 ## Commande
 
 ```bash
-npm start
+# depuis aac/
+npm run geometries
 # ou
-node generate_aac_geometries_parquet.js [--input AAC.gpkg] [--output aac_hilbert.parquet]
+node geometries/generate_aac_geometries_parquet.js [--input ../data/AAC.gpkg] [--output output/aac_hilbert.parquet]
 ```
 
 ## Architecture de generate_aac_geometries_parquet.js

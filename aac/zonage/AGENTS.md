@@ -1,17 +1,18 @@
-# Instructions pour agents IA — zonage_pmtiles_generator
+# Instructions pour agents IA — aac/zonage
 
 ## Contexte
 
 Ce dossier contient un **script one-shot** : `generate_zonage_pmtiles.js`.
 
-Il remplace la couche `aac` d'un PMTiles de zonage existant (`water_protection` : `ppr`, `ppe`, `aac`, `sage`) par une couche générée depuis `AAC.gpkg`, sans toucher aux tuiles des autres couches. Aucune dépendance réseau ni credentials ne sont requis.
+Il remplace la couche `aac` d'un PMTiles de zonage existant (`water_protection` : `ppr`, `ppe`, `aac`, `sage`) par une couche générée depuis `AAC.gpkg`, sans toucher aux tuiles des autres couches. Le résultat est écrit dans `output/`, avec une copie dans `../data/`. Aucune dépendance réseau ni credentials ne sont requis.
 
 ## Commande
 
 ```bash
-npm start
+# depuis aac/
+npm run zonage
 # ou
-node generate_zonage_pmtiles.js [--aac AAC.gpkg] [--layer AAC_FRA] [--base zonage.pmtiles] [--output output/zonage.pmtiles]
+node zonage/generate_zonage_pmtiles.js [--aac AAC.gpkg] [--layer AAC_FRA] [--base zonage.pmtiles] [--output output/zonage.pmtiles]
 ```
 
 ## Architecture de generate_zonage_pmtiles.js

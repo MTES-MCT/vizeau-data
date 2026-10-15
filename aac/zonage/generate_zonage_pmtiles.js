@@ -6,7 +6,7 @@
  *   node generate_zonage_pmtiles.js [--aac <AAC.gpkg>] [--base <zonage.pmtiles>] [--output <zonage.pmtiles>]
  *
  * Valeurs par défaut (relatives au dossier de ce script) :
- *   --aac     ../aac_geometries_parquet_generator/AAC.gpkg
+ *   --aac     ../data/AAC.gpkg
  *   --layer   AAC_FRA                (couche du GPKG)
  *   --base    zonage.pmtiles         (PMTiles existant dont on reprend ppr, ppe, sage)
  *   --output  output/zonage.pmtiles
@@ -16,11 +16,11 @@
 
 import { execFileSync, spawnSync } from "child_process";
 import {
-  closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync,
+  closeSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync,
   readSync, renameSync, rmSync, writeSync,
 } from "fs";
 import { tmpdir } from "os";
-import { dirname, join, resolve } from "path";
+import { basename, dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { gunzipSync, gzipSync } from "zlib";
 
@@ -35,7 +35,7 @@ function parseArgs() {
     return i !== -1 ? args[i + 1] : null;
   };
   return {
-    aac: resolve(__dirname, get("--aac") ?? "../aac_geometries_parquet_generator/AAC.gpkg"),
+    aac: resolve(__dirname, get("--aac") ?? "../data/AAC.gpkg"),
     layer: get("--layer") ?? "AAC_FRA",
     base: resolve(__dirname, get("--base") ?? "zonage.pmtiles"),
     output: resolve(__dirname, get("--output") ?? "output/zonage.pmtiles"),
@@ -244,6 +244,14 @@ try {
   const finalAac = final.tilestats.layers.find((l) => l.layer === "aac");
   if (finalAac?.count !== nbAac) {
     throw new Error(`Couche aac : ${finalAac?.count} entités tuilées pour ${nbAac} AAC dans le GPKG`);
+  }
+
+  // Copie dans aac/data/, avec les autres fichiers source et produits.
+  const dataCopy = resolve(__dirname, "../data", basename(output));
+  if (dataCopy !== output) {
+    mkdirSync(dirname(dataCopy), { recursive: true });
+    copyFileSync(output, dataCopy);
+    console.log(`✓ copie : ${dataCopy}`);
   }
 } finally {
   rmSync(tmp, { recursive: true, force: true });

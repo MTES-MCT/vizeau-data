@@ -1,6 +1,0 @@
-{
-  "type": "module",
-  "scripts": {
-    "start": "node generate_zonage_pmtiles.js"
-  }
-}

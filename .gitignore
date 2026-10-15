@@ -1,11 +1,11 @@
 .idea
 tmp
-*/.env
+**/.env
 pmtiles_generator/output/*
 pmtiles_generator/workdir/*
-aac_geometries_parquet_generator/node_modules
+aac/node_modules
 
 *.parquet
 *.gpkg
-zonage_pmtiles_generator/*.pmtiles
-zonage_pmtiles_generator/output
+aac/zonage/*.pmtiles
+aac/zonage/output

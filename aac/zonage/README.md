@@ -1,4 +1,4 @@
-# zonage_pmtiles_generator
+# aac/zonage
 
 Met à jour la couche **`aac`** du PMTiles de zonage de protection de l'eau (`water_protection` : couches `ppr`, `ppe`, `aac`, `sage`) à partir du **GeoPackage des Aires d'Alimentation de Captage**, en conservant à l'identique les tuiles des autres couches.
 
@@ -18,16 +18,17 @@ brew install gdal tippecanoe
 ## Usage
 
 1. Placer le PMTiles de zonage existant dans ce dossier sous le nom `zonage.pmtiles`
-2. Vérifier que `../aac_geometries_parquet_generator/AAC.gpkg` est à jour
+2. Vérifier que `../data/AAC.gpkg` est à jour
 3. Lancer la génération :
 
 ```bash
-npm start
+# depuis aac/
+npm run zonage
 # ou directement :
-node generate_zonage_pmtiles.js
+node zonage/generate_zonage_pmtiles.js
 ```
 
-Le fichier `output/zonage.pmtiles` est produit (environ 1 minute).
+Le fichier `output/zonage.pmtiles` est produit (environ 1 minute), et copié dans `../data/`.
 
 ### Options
 
@@ -41,7 +42,7 @@ node generate_zonage_pmtiles.js \
 
 | Option | Défaut | Description |
 |---|---|---|
-| `--aac` | `../aac_geometries_parquet_generator/AAC.gpkg` | GeoPackage des AAC |
+| `--aac` | `../data/AAC.gpkg` | GeoPackage des AAC |
 | `--layer` | `AAC_FRA` | Couche du GeoPackage |
 | `--base` | `zonage.pmtiles` | PMTiles existant dont on reprend les couches autres que `aac` |
 | `--output` | `output/zonage.pmtiles` | Fichier produit (peut être égal à `--base`) |

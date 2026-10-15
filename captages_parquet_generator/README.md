@@ -2,7 +2,7 @@
 
 ## Contexte
 
-`captages.parquet` — utilisé par `../aac_fiches_parquet_generator/generate_aac_fiches_parquet.js`
+`captages.parquet` — utilisé par `../aac/fiches/generate_aac_fiches_parquet.js`
 pour construire la liste des installations de captage de chaque fiche AAC —
 est aujourd'hui téléchargé tel quel depuis S3, sans processus de génération
 documenté dans ce dépôt : c'est un export brut d'une source privée
@@ -21,13 +21,13 @@ approximations connues) est dans `csv-to-parquet-schema-mapping.md` — ce
 document-ci résume le processus dans son ensemble : entrées, sorties,
 contenu.
 
-Ce dossier est **totalement indépendant** de `aac_fiches_parquet_generator/` : ses
+Ce dossier est **totalement indépendant** de `aac/fiches/` : ses
 propres `package.json`/`node_modules` et son propre `data/` (voir ci-dessous)
 ne dépendent d'aucun fichier généré ou téléchargé par
 `generate_aac_fiches_parquet.js`. Seule la comparaison avec l'ancien `captages.parquet`
 (scripts `compare_captages.mjs`/`investigate_pp_coverage.mjs`) nécessite d'y
 avoir déposé une copie locale de ce fichier (cf. plus bas) — elle n'est pas
-lue directement depuis `aac_fiches_parquet_generator/data/`.
+lue directement depuis `aac/fiches/data/`.
 
 ## Installation
 
@@ -74,7 +74,7 @@ l'ancien `captages.parquet` (scripts `compare_captages.mjs` et
 `investigate_pp_coverage.mjs`), y déposer une copie locale :
 
 ```bash
-cp ../aac_fiches_parquet_generator/data/captages.parquet data/captages.parquet
+cp ../aac/fiches/data/captages.parquet data/captages.parquet
 ```
 
 ### À quoi il sert

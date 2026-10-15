@@ -1,9 +1,0 @@
-{
-  "type": "module",
-  "scripts": {
-    "start": "node generate_aac_geometries_parquet.js"
-  },
-  "dependencies": {
-    "@duckdb/node-api": "^1.4.4-r.2"
-  }
-}

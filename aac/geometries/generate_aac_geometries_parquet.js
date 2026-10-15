@@ -1,18 +1,18 @@
 /**
- * Convertit le fichier AAC.gpkg local en aac_hilbert.parquet trié par courbe
+ * Convertit le fichier AAC.gpkg partagé (aac/data/) en aac_hilbert.parquet trié par courbe
  * de Hilbert, et l'écrit dans le même dossier que ce script.
  *
  * Usage :
  *   node generate_aac_geometries_parquet.js [--input <chemin/AAC.gpkg>] [--output <chemin/aac_hilbert.parquet>]
  *
  * Valeurs par défaut :
- *   --input  AAC.gpkg             (dans le même dossier que ce script)
- *   --output aac_hilbert.parquet  (dans le même dossier que ce script)
+ *   --input  ../data/AAC.gpkg     (GPKG partagé du dossier aac/)
+ *   --output output/aac_hilbert.parquet
  */
 
 import { DuckDBInstance } from "@duckdb/node-api";
-import { existsSync, mkdirSync, unlinkSync } from "fs";
-import { resolve, dirname } from "path";
+import { copyFileSync, existsSync, mkdirSync, unlinkSync } from "fs";
+import { basename, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -28,11 +28,11 @@ function parseArgs() {
   return {
     input: resolve(
       __dirname,
-      get("--input") ?? "AAC.gpkg"
+      get("--input") ?? "../data/AAC.gpkg"
     ),
     output: resolve(
       __dirname,
-      get("--output") ?? "aac_hilbert.parquet"
+      get("--output") ?? "output/aac_hilbert.parquet"
     ),
   };
 }
@@ -136,3 +136,11 @@ const cols = colRows.map((r) => r.column_name).join(", ");
 console.log(`\n✓ ${output}`);
 console.log(`  ${n} features`);
 console.log(`  Colonnes : ${cols}`);
+
+// Copie dans aac/data/, où les autres scripts (fiches) lisent leurs sources.
+const dataCopy = resolve(__dirname, "../data", basename(output));
+if (dataCopy !== output) {
+  mkdirSync(dirname(dataCopy), { recursive: true });
+  copyFileSync(output, dataCopy);
+  console.log(`✓ copie : ${dataCopy}`);
+}

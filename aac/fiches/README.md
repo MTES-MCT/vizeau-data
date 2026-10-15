@@ -6,14 +6,14 @@ Pipeline Node.js qui génère des fiches descriptives pour chaque **Aire d'Alime
 
 Le pipeline s'exécute en 3 étapes :
 
-1. **Téléchargement** — récupère les fichiers source Parquet depuis S3 vers `data/`
+1. **Téléchargement** — récupère depuis S3 vers `aac/data/` les fichiers source absents (`aac_hilbert.parquet` y est déjà si `../geometries` a été lancé)
 2. **Génération des fiches** — 5 phases de traitement via DuckDB :
    - Phase 1 : données légères (AAC, zones PP, communes, captages)
    - Phase 2 : parcelles bio RPG annuelles (scan spatial)
    - Phase 3 : parcelles RPG toutes cultures (scan spatial)
    - Phase 4 : évolution annuelle des cultures (`RPG_YYYY.parquet` depuis S3, mis en cache)
    - Phase 5 : assemblage des fiches JSON
-3. **Écriture et push S3** — sérialise les fiches en Parquet dans `data/output/`, puis pousse le fichier vers S3
+3. **Écriture et push S3** — sérialise les fiches en Parquet dans `output/` (avec une copie dans `aac/data/`), puis pousse le fichier vers S3
 
 Chaque fiche AAC contient : nom, code, surface, emprise (bbox), communes recouvertes, installations de captage, répartition des cultures (SAU globale, PPE, PPR), part de l'agriculture biologique et évolution annuelle des cultures.
 
@@ -25,12 +25,13 @@ Chaque fiche AAC contient : nom, code, surface, emprise (bbox), communes recouve
 ## Installation
 
 ```bash
+# depuis aac/
 npm install
 ```
 
 ## Configuration
 
-Créer un fichier `.env` à la racine :
+Créer un fichier `.env` dans `aac/` (voir `aac/.env.sample`) :
 
 ```env
 S3_BUCKET=mon-bucket          # Bucket source (requis)
@@ -52,14 +53,15 @@ S3_OVERWRITE=                 # À 1, écrase la destination sans confirmation
 ## Utilisation
 
 ```bash
-npm start
+# depuis aac/
+npm run fiches
 # ou directement :
-node --env-file=.env generate_aac_fiches_parquet.js
+node --env-file=.env fiches/generate_aac_fiches_parquet.js
 ```
 
 Si le fichier de destination existe déjà sur S3, le script demande confirmation avant de lancer le traitement (réponse `o` pour écraser). En cas de refus, ou hors terminal interactif (CI, cron…) sans `S3_OVERWRITE=1`, le traitement est mené jusqu'au bout mais le fichier n'est écrit qu'en local.
 
-Dans tous les cas, le fichier final est écrit dans `data/output/` avant l'upload : il reste disponible même si l'upload est ignoré ou échoue.
+Dans tous les cas, le fichier final est écrit dans `output/` avant l'upload : il reste disponible même si l'upload est ignoré ou échoue.
 
 ## Fichiers source attendus sur S3
 
@@ -80,7 +82,7 @@ Ces fichiers ne sont pas publiés tels quels par l'administration : ils sont pro
 
 | Fichier                          | Source                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `aac_hilbert.parquet`            | [Aires d'Alimentation de Captages – France entière](https://www.sandre.eaufrance.fr/atlas/srv/fre/catalog.search#/metadata/f6a60c29-77dc-4bc1-a8d2-bf0572bf58ab) (SANDRE, couche WFS `sa:AAC_FRA`). Télécharger "AAC.gpkg" (service WFS `https://sandre.eaufrance.fr/aac/mapserver/aac`, `OUTPUTFORMAT=GPKG`), puis convertir en parquet via `../aac_geometries_parquet_generator` (tri Hilbert inclus).                                                                                                                                 |
+| `aac_hilbert.parquet`            | [Aires d'Alimentation de Captages – France entière](https://www.sandre.eaufrance.fr/atlas/srv/fre/catalog.search#/metadata/f6a60c29-77dc-4bc1-a8d2-bf0572bf58ab) (SANDRE, couche WFS `sa:AAC_FRA`). Télécharger "AAC.gpkg" (service WFS `https://sandre.eaufrance.fr/aac/mapserver/aac`, `OUTPUTFORMAT=GPKG`), puis convertir en parquet via `../geometries` (tri Hilbert inclus).                                                                                                                                 |
 | `communes_hilbert.parquet`       | Contours communaux [IGN ADMIN EXPRESS COG (simplifié)](https://www.data.gouv.fr/datasets/admin-express-cog-simplifiee-metropole-drom-saint-martin-saint-barthelemy) (data.gouv.fr), champs `code`/`nom`/`geom`, convertis en Parquet et réindexés en Hilbert.                                                                                                                                                                                                                                                                            |
 | `captages_prioritaires_2026.csv` | Export du référentiel national des captages prioritaires ("Grenelle") du portail [aires-captages.fr](https://aires-captages.fr) (OFB/Ministère), qui agrège les listes par agence de l'eau (ex. AEAG pour Adour-Garonne, cf. [SDAGE 2022-2027 — Captages prioritaires](https://www.data.gouv.fr/datasets/aeag-sdage-2022-2027-captages-prioritaires) sur data.gouv.fr pour l'équivalent en accès ouvert bassin par bassin). L'export national complet passe généralement par une demande d'accès au portail plutôt que par data.gouv.fr. |
 
@@ -102,15 +104,15 @@ Les phases 2, 3 et 4 sont des jointures spatiales entre ~1600 AAC et des million
 
 ## Cache local
 
-`data/` conserve les fichiers source déjà téléchargés : ils ne sont récupérés qu'à la première exécution.
+`aac/data/` conserve les fichiers source : seuls les fichiers absents sont téléchargés depuis S3. `aac_hilbert.parquet` y est déposé par `../geometries`, qui l'écrase à chaque exécution.
 
-La phase 4 dispose d'un cache dédié. Les `RPG_YYYY.parquet` pèsent 2 à 4 Go chacun et la colonne géométrique représente ~98 % des octets, sans statistique spatiale permettant d'élaguer des row groups : la phase est bornée par le débit S3 (~50 Mo/s en agrégé), pas par le CPU. Le script écrit donc l'agrégat de chaque année (≈ 18 000 lignes) dans `data/cache/rpg_evolution_YYYY.parquet` et télécharge les années manquantes en parallèle (`RPG_CONCURRENCY`). Un millésime publié n'évoluant plus, une réexécution ne retélécharge que les nouvelles années — poser `RPG_REFRESH=1` force le recalcul de toutes.
+La phase 4 dispose d'un cache dédié. Les `RPG_YYYY.parquet` pèsent 2 à 4 Go chacun et la colonne géométrique représente ~98 % des octets, sans statistique spatiale permettant d'élaguer des row groups : la phase est bornée par le débit S3 (~50 Mo/s en agrégé), pas par le CPU. Le script écrit donc l'agrégat de chaque année (≈ 18 000 lignes) dans `aac/data/cache/rpg_evolution_YYYY.parquet` et télécharge les années manquantes en parallèle (`RPG_CONCURRENCY`). Un millésime publié n'évoluant plus, une réexécution ne retélécharge que les nouvelles années — poser `RPG_REFRESH=1` force le recalcul de toutes.
 
-Pour repartir de zéro : supprimer `data/` (sources) et/ou `data/cache/` (agrégats RPG annuels).
+Pour repartir de zéro : supprimer les sources de `aac/data/` et/ou `aac/data/cache/` (agrégats RPG annuels).
 
 ## Sortie
 
-Fichier `aac.parquet` (configurable via `S3_OUTPUT_KEY`) écrit dans `data/output/` et poussé sur S3 (ZSTD), contenant une ligne par AAC, triée par `code` (ordre numérique, codes non numériques en fin), avec les champs suivants :
+Fichier `aac.parquet` (configurable via `S3_OUTPUT_KEY`) écrit dans `output/` et poussé sur S3 (ZSTD), contenant une ligne par AAC, triée par `code` (ordre numérique, codes non numériques en fin), avec les champs suivants :
 
 - `nom`, `code`, `prioritaire`, `date_creation`, `date_maj`, `bbox`, `surface`
 - `nb_captages_actifs`, `nb_installations`

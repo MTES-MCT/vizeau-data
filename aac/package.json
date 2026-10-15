@@ -1,0 +1,12 @@
+{
+  "type": "module",
+  "scripts": {
+    "geometries": "node geometries/generate_aac_geometries_parquet.js",
+    "zonage": "node zonage/generate_zonage_pmtiles.js",
+    "fiches": "node --env-file=.env fiches/generate_aac_fiches_parquet.js",
+    "all": "node run_all.js"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "^1.4.4-r.2"
+  }
+}

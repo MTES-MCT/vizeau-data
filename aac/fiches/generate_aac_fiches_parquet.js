@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
  * Pipeline complet AAC :
- *   1. Télécharge les fichiers source depuis S3 vers data/
+ *   1. Télécharge depuis S3 vers aac/data/ les fichiers source absents
+ *      (aac_hilbert.parquet y est déjà si geometries a été lancé)
  *   2. Génère les fiches AAC (5 phases DuckDB + assemblage JS)
- *   3. Écrit le fichier aac.parquet dans data/output/ puis le pousse sur S3
+ *   3. Écrit le fichier aac.parquet dans fiches/output/ (copie dans aac/data/)
+ *      puis le pousse sur S3
  *
  * Usage : node --env-file=.env generate_aac_fiches_parquet.js
  *
@@ -27,7 +29,7 @@
  */
 
 import { DuckDBInstance } from '@duckdb/node-api'
-import { existsSync, mkdirSync, createWriteStream, unlinkSync, renameSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync, createWriteStream, unlinkSync, renameSync } from 'fs'
 import { join, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 import { once } from 'events'
@@ -35,7 +37,7 @@ import { cpus } from 'os'
 import { createInterface } from 'readline/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const DATA = join(__dirname, 'data')
+const DATA = join(__dirname, '..', 'data')
 mkdirSync(DATA, { recursive: true })
 
 // ─── Config S3 ────────────────────────────────────────────────────────────────
@@ -546,7 +548,7 @@ console.log(`  RPG chargé — ${rpgRows.length} lignes pour ${rpgMap.size} AAC 
 // bornée par le débit S3, pas par le CPU. Deux leviers :
 //   1. les années sont téléchargées en parallèle (le débit agrégé dépasse celui
 //      d'un flux unique et une année lente ne bloque plus les suivantes) ;
-//   2. l'agrégat par année (~18 000 lignes) est mis en cache dans data/cache/ :
+//   2. l'agrégat par année (~18 000 lignes) est mis en cache dans aac/data/cache/ :
 //      un RPG_YYYY publié ne bouge plus, une réexécution ne retélécharge rien.
 
 console.log('\nPhase 4 — RPG évolution annuelle (S3 RPG/RPG_YYYY.parquet)...')
@@ -706,9 +708,9 @@ console.log(`  ${nbFiches} fiches assemblées en ${Date.now() - t}ms`)
 
 console.log('\n═══ Étape 3 : écriture locale et push vers S3 ═══\n')
 
-// Le fichier est toujours écrit dans data/output/, que l'upload ait lieu ou non
+// Le fichier est toujours écrit dans fiches/output/, que l'upload ait lieu ou non
 // (refus d'écraser, échec réseau…).
-const OUTPUT = join(DATA, 'output')
+const OUTPUT = join(__dirname, 'output')
 mkdirSync(OUTPUT, { recursive: true })
 const localOutput = join(OUTPUT, basename(S3_OUTPUT_KEY))
 const tmpOutput = `${localOutput}.tmp`
@@ -728,6 +730,11 @@ await conn.run(`
 renameSync(tmpOutput, localOutput)
 unlinkSync(tmpNdjson)
 console.log(` ${((Date.now() - t) / 1000).toFixed(1)}s`)
+
+// Copie dans aac/data/, avec les autres fichiers source et produits.
+const dataCopy = join(DATA, basename(localOutput))
+copyFileSync(localOutput, dataCopy)
+console.log(`  ✓ copie : ${dataCopy}`)
 
 if (!upload) {
   console.log(`\nTerminé → ${localOutput} (upload S3 ignoré)`)
