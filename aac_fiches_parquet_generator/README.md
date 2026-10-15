@@ -13,7 +13,7 @@ Le pipeline s'exécute en 3 étapes :
    - Phase 3 : parcelles RPG toutes cultures (scan spatial)
    - Phase 4 : évolution annuelle des cultures (`RPG_YYYY.parquet` depuis S3, mis en cache)
    - Phase 5 : assemblage des fiches JSON
-3. **Push S3** — sérialise les fiches en Parquet et pousse vers S3
+3. **Écriture et push S3** — sérialise les fiches en Parquet dans `data/output/`, puis pousse le fichier vers S3
 
 Chaque fiche AAC contient : nom, code, surface, emprise (bbox), communes recouvertes, installations de captage, répartition des cultures (SAU globale, PPE, PPR), part de l'agriculture biologique et évolution annuelle des cultures.
 
@@ -57,7 +57,9 @@ npm start
 node --env-file=.env generate_aac_fiches_parquet.js
 ```
 
-Si le fichier de destination existe déjà sur S3, le script demande confirmation avant de lancer le traitement (réponse `o` pour écraser, sinon abandon). Hors terminal interactif (CI, cron…), il s'arrête en erreur, sauf si `S3_OVERWRITE=1` est posé.
+Si le fichier de destination existe déjà sur S3, le script demande confirmation avant de lancer le traitement (réponse `o` pour écraser). En cas de refus, ou hors terminal interactif (CI, cron…) sans `S3_OVERWRITE=1`, le traitement est mené jusqu'au bout mais le fichier n'est écrit qu'en local.
+
+Dans tous les cas, le fichier final est écrit dans `data/output/` avant l'upload : il reste disponible même si l'upload est ignoré ou échoue.
 
 ## Fichiers source attendus sur S3
 
@@ -108,7 +110,7 @@ Pour repartir de zéro : supprimer `data/` (sources) et/ou `data/cache/` (agrég
 
 ## Sortie
 
-Fichier `aac.parquet` (configurable via `S3_OUTPUT_KEY`) poussé sur S3 (ZSTD), contenant une ligne par AAC, triée par `code` (ordre numérique, codes non numériques en fin), avec les champs suivants :
+Fichier `aac.parquet` (configurable via `S3_OUTPUT_KEY`) écrit dans `data/output/` et poussé sur S3 (ZSTD), contenant une ligne par AAC, triée par `code` (ordre numérique, codes non numériques en fin), avec les champs suivants :
 
 - `nom`, `code`, `prioritaire`, `date_creation`, `date_maj`, `bbox`, `surface`
 - `nb_captages_actifs`, `nb_installations`

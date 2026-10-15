@@ -3,7 +3,7 @@
  * Pipeline complet AAC :
  *   1. Télécharge les fichiers source depuis S3 vers data/
  *   2. Génère les fiches AAC (5 phases DuckDB + assemblage JS)
- *   3. Pousse le fichier aac.parquet résultant sur S3
+ *   3. Écrit le fichier aac.parquet dans data/output/ puis le pousse sur S3
  *
  * Usage : node --env-file=.env generate_aac_fiches_parquet.js
  *
@@ -22,12 +22,13 @@
  *   RPG_CONCURRENCY  Nb d'années RPG téléchargées en parallèle en phase 4 (défaut : 3)
  *   RPG_REFRESH      À 1, ignore le cache local des agrégats RPG annuels (phase 4)
  *   S3_OVERWRITE     À 1, écrase le fichier de destination s'il existe déjà sans
- *                    demander confirmation (requis hors terminal interactif)
+ *                    demander confirmation. Sinon, hors terminal interactif ou en
+ *                    cas de refus, le fichier n'est écrit qu'en local.
  */
 
 import { DuckDBInstance } from '@duckdb/node-api'
 import { existsSync, mkdirSync, createWriteStream, unlinkSync, renameSync } from 'fs'
-import { join, dirname } from 'path'
+import { join, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 import { once } from 'events'
 import { cpus } from 'os'
@@ -96,24 +97,27 @@ const q = (sql) => conn.runAndReadAll(sql).then((r) => r.getRowObjects())
 // ─── Vérification de la destination ──────────────────────────────────────────
 
 // Faite avant tout calcul pour ne pas découvrir le conflit après de longues
-// minutes de traitement. Hors terminal interactif, on refuse d'écraser sans
-// S3_OVERWRITE=1. Sans joker, glob() renvoie le chemin tel quel même s'il
-// n'existe pas : on liste donc le préfixe et on filtre sur le chemin exact.
+// minutes de traitement. Si l'écrasement n'est pas autorisé (refus, ou hors
+// terminal interactif sans S3_OVERWRITE=1), le traitement continue mais le
+// fichier n'est écrit qu'en local. Sans joker, glob() renvoie le chemin tel quel
+// même s'il n'existe pas : on liste donc le préfixe et on filtre sur le chemin exact.
 const destExists =
   (await q(`SELECT file FROM glob('${sqlEscape(s3dest)}*') WHERE file = '${sqlEscape(s3dest)}'`))
     .length > 0
 
+let upload = true
+
 if (destExists && !S3_OVERWRITE) {
-  if (!process.stdin.isTTY) {
-    console.error(`${s3dest} existe déjà. Poser S3_OVERWRITE=1 pour l'écraser.`)
-    process.exit(1)
+  if (process.stdin.isTTY) {
+    const rl = createInterface({ input: process.stdin, output: process.stdout })
+    const answer = await rl.question(`${s3dest} existe déjà. L'écraser ? (o/N) `)
+    rl.close()
+    upload = /^(o|oui|y|yes)$/i.test(answer.trim())
+  } else {
+    upload = false
   }
-  const rl = createInterface({ input: process.stdin, output: process.stdout })
-  const answer = await rl.question(`${s3dest} existe déjà. L'écraser ? (o/N) `)
-  rl.close()
-  if (!/^(o|oui|y|yes)$/i.test(answer.trim())) {
-    console.log('Abandon : le fichier distant est conservé.')
-    process.exit(0)
+  if (!upload) {
+    console.log(`Le fichier distant est conservé : la sortie ne sera écrite qu'en local.`)
   }
   console.log()
 }
@@ -698,24 +702,55 @@ await new Promise((resolve, reject) => {
 
 console.log(`  ${nbFiches} fiches assemblées en ${Date.now() - t}ms`)
 
-// ─── Étape 3 : écriture Parquet et push S3 ───────────────────────────────────
+// ─── Étape 3 : écriture Parquet locale et push S3 ────────────────────────────
 
-console.log('\n═══ Étape 3 : push vers S3 ═══\n')
-t = Date.now()
+console.log('\n═══ Étape 3 : écriture locale et push vers S3 ═══\n')
+
+// Le fichier est toujours écrit dans data/output/, que l'upload ait lieu ou non
+// (refus d'écraser, échec réseau…).
+const OUTPUT = join(DATA, 'output')
+mkdirSync(OUTPUT, { recursive: true })
+const localOutput = join(OUTPUT, basename(S3_OUTPUT_KEY))
+const tmpOutput = `${localOutput}.tmp`
 
 // Tri par code pour getByCode et getInstallationCodesByAacCode. Pas de
 // ROW_GROUP_SIZE : le fichier (~1 700 lignes) tient de toute façon en un seul
 // row group, DuckDB découpant par paquets de 2 048 lignes.
-process.stdout.write(`  ↑ ${s3dest}...`)
+t = Date.now()
+process.stdout.write(`  → ${localOutput}...`)
 await conn.run(`
   COPY (
     SELECT * FROM read_json_auto('${tmpNdjson}', maximum_object_size = 10485760)
     ORDER BY TRY_CAST(code AS INTEGER), code
   )
-  TO '${s3dest}' (FORMAT PARQUET, CODEC 'ZSTD')
+  TO '${tmpOutput}' (FORMAT PARQUET, CODEC 'ZSTD')
 `)
+renameSync(tmpOutput, localOutput)
 unlinkSync(tmpNdjson)
+console.log(` ${((Date.now() - t) / 1000).toFixed(1)}s`)
+
+if (!upload) {
+  console.log(`\nTerminé → ${localOutput} (upload S3 ignoré)`)
+  process.exit(0)
+}
+
+t = Date.now()
+process.stdout.write(`  ↑ ${s3dest}...`)
+try {
+  await conn.run(`
+    COPY (
+      SELECT * FROM read_parquet('${localOutput}')
+      ORDER BY TRY_CAST(code AS INTEGER), code
+    )
+    TO '${s3dest}' (FORMAT PARQUET, CODEC 'ZSTD')
+  `)
+} catch (err) {
+  console.log()
+  console.error(`Échec de l'upload vers ${s3dest} : ${err.message}`)
+  console.error(`Le fichier reste disponible en local : ${localOutput}`)
+  process.exit(1)
+}
 
 console.log(` ${((Date.now() - t) / 1000).toFixed(1)}s`)
-console.log(`\nTerminé → ${s3dest}`)
+console.log(`\nTerminé → ${localOutput} et ${s3dest}`)
 process.exit(0)
