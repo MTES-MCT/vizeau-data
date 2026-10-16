@@ -10,7 +10,7 @@ Génère un fichier **PMTiles** multi-couches à partir du **Registre Parcellair
 
 ### [`aac`](aac/README.md)
 
-Outils des **Aires d'Alimentation de Captage (AAC)**, alimentés par une source commune (`aac/data/AAC.gpkg`) et lancés ensemble via `npm run all` :
+Outils des **Aires d'Alimentation de Captage (AAC)**, alimentés par une source commune (`data/aac/AAC.gpkg`) et lancés ensemble via `npm run all` :
 
 - [`aac/geometries`](aac/geometries/README.md) — convertit le GeoPackage des AAC en **GeoParquet** (WGS84, ZSTD) trié par courbe de Hilbert, pour des requêtes spatiales performantes avec DuckDB.
 - [`aac/fiches`](aac/fiches/README.md) — pipeline Node.js/DuckDB qui construit une **fiche descriptive par AAC** (surface, emprise, communes, installations de captage, répartition des cultures sur la SAU/PPE/PPR, part du bio, évolution annuelle des cultures) à partir des fichiers Parquet stockés sur S3, puis publie le résultat en `aac.parquet` sur S3.
@@ -29,11 +29,26 @@ Script Node.js/DuckDB qui génère `analyses_robinet.parquet` : une ligne par **
 ```
                  ┌──► aac/geometries ──► aac_hilbert.parquet ──(upload S3 manuel)──┐
                  │                                                                 ▼
-aac/data/AAC.gpkg┤                                captages_parquet_generator ──► aac/fiches ──► aac.parquet (S3)
+data/aac/AAC.gpkg┤                                captages_parquet_generator ──► aac/fiches ──► aac.parquet (S3)
                  │
                  └──► aac/zonage ──► zonage.pmtiles (couche aac mise à jour)
 
 pmtiles_generator ──► RPG en PMTiles (S3)
 
 analyses_parquet_generator ──► analyses_robinet.parquet
+```
+
+## Données locales
+
+Les scripts lisent et écrivent leurs données dans `data/`, à la racine du dépôt (non versionné). Le chemin est défini dans [`data-dir.mjs`](data-dir.mjs) ; la variable d'environnement `DATA_DIR` permet d'en utiliser un autre, par exemple pour qu'un worktree travaille sur les données du checkout principal.
+
+```
+data/
+├── s3/         copie locale du bucket S3 : sources téléchargées par aac/fiches si absentes,
+│               et copies des fichiers produits par aac (aac_hilbert, aac, zonage)
+├── aac/        AAC.gpkg, cache des agrégats RPG (cache/), fichiers temporaires de fiches
+├── analyses/   dossier de travail de analyses_parquet_generator : sources/ (CAP_*),
+│               référentiels (téléchargés depuis S3 s'ils manquent), fichiers produits
+└── captages/   entrées (référentiels, périmètres pp*_hilbert) et sortie (captages_new.parquet)
+                de captages_parquet_generator
 ```

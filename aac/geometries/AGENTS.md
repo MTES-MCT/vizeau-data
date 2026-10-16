@@ -4,7 +4,7 @@
 
 Ce dossier contient un **script de conversion one-shot** : `generate_aac_geometries_parquet.js`.
 
-Il lit le GeoPackage partagé `../data/AAC.gpkg`, le convertit en GeoParquet trié par courbe de Hilbert via DuckDB, et écrit le résultat dans `output/`, avec une copie dans `../data/`. Aucune dépendance réseau ni credentials ne sont requis.
+Il lit le GeoPackage partagé `data/aac/AAC.gpkg` (dossier `data/` à la racine du dépôt, voir `data-dir.mjs`), le convertit en GeoParquet trié par courbe de Hilbert via DuckDB, et écrit le résultat dans `output/`, avec une copie dans `data/s3/`. Aucune dépendance réseau ni credentials ne sont requis.
 
 ## Commande
 
@@ -12,7 +12,7 @@ Il lit le GeoPackage partagé `../data/AAC.gpkg`, le convertit en GeoParquet tri
 # depuis aac/
 npm run geometries
 # ou
-node geometries/generate_aac_geometries_parquet.js [--input ../data/AAC.gpkg] [--output output/aac_hilbert.parquet]
+node geometries/generate_aac_geometries_parquet.js [--input ../../data/aac/AAC.gpkg] [--output output/aac_hilbert.parquet]
 ```
 
 ## Architecture de generate_aac_geometries_parquet.js

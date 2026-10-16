@@ -4,7 +4,7 @@
 
 Ce dossier contient un **script one-shot** : `generate_zonage_pmtiles.js`.
 
-Il remplace la couche `aac` d'un PMTiles de zonage existant (`water_protection` : `ppr`, `ppe`, `aac`, `sage`) par une couche générée depuis `AAC.gpkg`, sans toucher aux tuiles des autres couches. Le résultat est écrit dans `output/`, avec une copie dans `../data/`. Aucune dépendance réseau ni credentials ne sont requis.
+Il remplace la couche `aac` d'un PMTiles de zonage existant (`water_protection` : `ppr`, `ppe`, `aac`, `sage`) par une couche générée depuis `AAC.gpkg`, sans toucher aux tuiles des autres couches. Le résultat est écrit dans `output/`, avec une copie dans `data/s3/` (racine du dépôt). Aucune dépendance réseau ni credentials ne sont requis.
 
 ## Commande
 

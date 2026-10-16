@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
  * Pipeline complet AAC :
- *   1. Télécharge depuis S3 vers aac/data/ les fichiers source absents
+ *   1. Télécharge depuis S3 vers data/s3/ les fichiers source absents
  *      (aac_hilbert.parquet y est déjà si geometries a été lancé)
  *   2. Génère les fiches AAC (5 phases DuckDB + assemblage JS)
- *   3. Écrit le fichier aac.parquet dans fiches/output/ (copie dans aac/data/).
+ *   3. Écrit le fichier aac.parquet dans fiches/output/ (copie dans data/s3/).
  *      L'envoi sur S3 se fait à part : npm run upload
  *
  * Usage : node --env-file=.env generate_aac_fiches_parquet.js
@@ -29,10 +29,15 @@ import { join, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 import { once } from 'events'
 import { cpus } from 'os'
+import { dataPath } from '../../data-dir.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const DATA = join(__dirname, '..', 'data')
-mkdirSync(DATA, { recursive: true })
+// Copie locale du bucket S3 (sources et fichiers produits), et dossier de travail
+// propre à fiches (cache, fichiers temporaires).
+const S3_DATA = dataPath('s3')
+const WORK = dataPath('aac')
+mkdirSync(S3_DATA, { recursive: true })
+mkdirSync(WORK, { recursive: true })
 
 // ─── Config S3 ────────────────────────────────────────────────────────────────
 
@@ -59,7 +64,7 @@ const sqlEscape = (value) => value.replace(/'/g, "''")
 // ─── DuckDB ───────────────────────────────────────────────────────────────────
 
 const instance = await DuckDBInstance.create(':memory:', {
-  temp_directory: join(DATA, '.tmp'),
+  temp_directory: join(WORK, '.tmp'),
   preserve_insertion_order: 'false',
   threads: String(DUCKDB_THREADS),
 })
@@ -98,7 +103,7 @@ async function runPool(items, limit, fn) {
 
 // ─── Helpers chemins locaux ───────────────────────────────────────────────────
 
-const localPath = (name) => join(DATA, name)
+const localPath = (name) => join(S3_DATA, name)
 
 const readTable = (name) => `read_parquet('${localPath(name)}')`
 
@@ -510,13 +515,13 @@ console.log(`  RPG chargé — ${rpgRows.length} lignes pour ${rpgMap.size} AAC 
 // bornée par le débit S3, pas par le CPU. Deux leviers :
 //   1. les années sont téléchargées en parallèle (le débit agrégé dépasse celui
 //      d'un flux unique et une année lente ne bloque plus les suivantes) ;
-//   2. l'agrégat par année (~18 000 lignes) est mis en cache dans aac/data/cache/ :
+//   2. l'agrégat par année (~18 000 lignes) est mis en cache dans data/aac/cache/ :
 //      un RPG_YYYY publié ne bouge plus, une réexécution ne retélécharge rien.
 
 console.log('\nPhase 4 — RPG évolution annuelle (S3 RPG/RPG_YYYY.parquet)...')
 t = Date.now()
 
-const CACHE = join(DATA, 'cache')
+const CACHE = join(WORK, 'cache')
 mkdirSync(CACHE, { recursive: true })
 const evolutionCachePath = (year) => join(CACHE, `rpg_evolution_${year}.parquet`)
 
@@ -582,7 +587,7 @@ console.log('\nPhase 5 — assemblage des fiches...')
 t = Date.now()
 let nbFiches = 0
 
-const tmpNdjson = join(DATA, '_tmp_aac.ndjson')
+const tmpNdjson = join(WORK, '_tmp_aac.ndjson')
 const ndjsonStream = createWriteStream(tmpNdjson)
 
 for (const [cdaac, aac] of aacMap) {
@@ -691,8 +696,8 @@ renameSync(tmpOutput, localOutput)
 unlinkSync(tmpNdjson)
 console.log(` ${((Date.now() - t) / 1000).toFixed(1)}s`)
 
-// Copie dans aac/data/, avec les autres fichiers source et produits.
-const dataCopy = join(DATA, basename(localOutput))
+// Copie dans data/s3/, où sont les autres fichiers du bucket.
+const dataCopy = join(S3_DATA, basename(localOutput))
 copyFileSync(localOutput, dataCopy)
 console.log(`  ✓ copie : ${dataCopy}`)
 

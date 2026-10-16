@@ -6,14 +6,14 @@ Pipeline Node.js qui génère des fiches descriptives pour chaque **Aire d'Alime
 
 Le pipeline s'exécute en 3 étapes :
 
-1. **Téléchargement** — récupère depuis S3 vers `aac/data/` les fichiers source absents (`aac_hilbert.parquet` y est déjà si `../geometries` a été lancé)
+1. **Téléchargement** — récupère depuis S3 vers `data/s3/` (à la racine du dépôt) les fichiers source absents (`aac_hilbert.parquet` y est déjà si `../geometries` a été lancé)
 2. **Génération des fiches** — 5 phases de traitement via DuckDB :
    - Phase 1 : données légères (AAC, zones PP, communes, captages)
    - Phase 2 : parcelles bio RPG annuelles (scan spatial)
    - Phase 3 : parcelles RPG toutes cultures (scan spatial)
    - Phase 4 : évolution annuelle des cultures (`RPG_YYYY.parquet` depuis S3, mis en cache)
    - Phase 5 : assemblage des fiches JSON
-3. **Écriture** — sérialise les fiches en Parquet dans `output/`, avec une copie dans `aac/data/`
+3. **Écriture** — sérialise les fiches en Parquet dans `output/`, avec une copie dans `data/s3/`
 
 Chaque fiche AAC contient : nom, code, surface, emprise (bbox), communes recouvertes, installations de captage, répartition des cultures (SAU globale, PPE, PPR), part de l'agriculture biologique et évolution annuelle des cultures.
 
@@ -99,11 +99,11 @@ Les phases 2, 3 et 4 sont des jointures spatiales entre ~1600 AAC et des million
 
 ## Cache local
 
-`aac/data/` conserve les fichiers source : seuls les fichiers absents sont téléchargés depuis S3. `aac_hilbert.parquet` y est déposé par `../geometries`, qui l'écrase à chaque exécution.
+`data/s3/` conserve les fichiers source : seuls les fichiers absents sont téléchargés depuis S3. `aac_hilbert.parquet` y est déposé par `../geometries`, qui l'écrase à chaque exécution.
 
-La phase 4 dispose d'un cache dédié. Les `RPG_YYYY.parquet` pèsent 2 à 4 Go chacun et la colonne géométrique représente ~98 % des octets, sans statistique spatiale permettant d'élaguer des row groups : la phase est bornée par le débit S3 (~50 Mo/s en agrégé), pas par le CPU. Le script écrit donc l'agrégat de chaque année (≈ 18 000 lignes) dans `aac/data/cache/rpg_evolution_YYYY.parquet` et télécharge les années manquantes en parallèle (`RPG_CONCURRENCY`). Un millésime publié n'évoluant plus, une réexécution ne retélécharge que les nouvelles années — poser `RPG_REFRESH=1` force le recalcul de toutes.
+La phase 4 dispose d'un cache dédié. Les `RPG_YYYY.parquet` pèsent 2 à 4 Go chacun et la colonne géométrique représente ~98 % des octets, sans statistique spatiale permettant d'élaguer des row groups : la phase est bornée par le débit S3 (~50 Mo/s en agrégé), pas par le CPU. Le script écrit donc l'agrégat de chaque année (≈ 18 000 lignes) dans `data/aac/cache/rpg_evolution_YYYY.parquet` et télécharge les années manquantes en parallèle (`RPG_CONCURRENCY`). Un millésime publié n'évoluant plus, une réexécution ne retélécharge que les nouvelles années — poser `RPG_REFRESH=1` force le recalcul de toutes.
 
-Pour repartir de zéro : supprimer les sources de `aac/data/` et/ou `aac/data/cache/` (agrégats RPG annuels).
+Pour repartir de zéro : supprimer les sources de `data/s3/` et/ou `data/aac/cache/` (agrégats RPG annuels).
 
 ## Sortie
 

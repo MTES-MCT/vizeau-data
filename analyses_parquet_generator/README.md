@@ -5,11 +5,11 @@ Script Node.js/DuckDB qui produit **une ligne par résultat d'analyse réalisée
 ## Fonctionnement
 
 ```
-S3 aac-workfiles/Fichiers_pour_analyses ──► référentiels absents téléchargés dans data/
+S3 aac-workfiles/Fichiers_pour_analyses ──► référentiels absents téléchargés dans data/analyses/
 
-data/sources/CAP_PLV_<période> ──┐
+sources/CAP_PLV_<période> ───────┐
   (prélèvements)                  ├─ jointure referenceprel ───┐
-data/sources/CAP_RES_<période> ──┘   (par période)             │
+sources/CAP_RES_<période> ───────┘   (par période)             │
   (résultats)                                                  │
                                                                │
 seuils_qualite_par_parametre.csv ──┐ (versionné)               │
@@ -25,7 +25,7 @@ ref_cap_25avril2025.xlsx ───┘   (installation → code BSS)      │
                                                                        BOOL_OR des indicateurs)
 ```
 
-1. **Téléchargement** : les référentiels absents du dossier de travail (`data/`) sont téléchargés depuis S3, à l'identique. Ceux déjà présents sont réutilisés ; il suffit de les supprimer pour forcer leur mise à jour.
+1. **Téléchargement** : les référentiels absents du dossier de travail (`data/analyses/`) sont téléchargés depuis S3, à l'identique. Ceux déjà présents sont réutilisés ; il suffit de les supprimer pour forcer leur mise à jour.
 2. **Chargement** : chaque fichier `CAP_PLV_*` / `CAP_RES_*` est lu par DuckDB (colonnes utiles uniquement, en texte). Les lignes mal formées sont ignorées et comptées dans un avertissement.
 3. **Dédoublonnage** : les fichiers mensuels republient à l'identique des prélèvements déjà parus. Un prélèvement n'est donc gardé que dans sa période la plus récente.
 4. **Enrichissement des paramètres** : libellé, limite et référence de qualité ne dépendent que du code paramètre. Ils sont calculés une fois par paramètre en JS (`referentiels.js`), avec les seuils numériques extraits de la limite et de la référence, puis joints aux analyses.
@@ -38,7 +38,7 @@ DuckDB travaille dans une base temporaire sur disque et peut déborder sur disqu
 ## Prérequis
 
 - Node.js ≥ 22.9
-- Accès S3 (Scaleway par défaut), seulement si des référentiels sont absents de `data/`
+- Accès S3 (Scaleway par défaut), seulement si des référentiels sont absents de `data/analyses/`
 
 ## Installation
 
@@ -63,23 +63,23 @@ Ce `.env` est propre à ce script. Il n'est pas versionné.
 
 ## Utilisation
 
-Le script travaille dans le dossier `data/` (non versionné) :
+Le script travaille dans le dossier `data/analyses/`, à la racine du dépôt (non versionné, voir `data-dir.mjs` ; la variable d'environnement `DATA_DIR` permet de déplacer le dossier `data/`) :
 
 ```
-data/
+data/analyses/
 ├── sources/                            CAP_PLV_* / CAP_RES_*, à déposer (voir Sources)
 ├── parametres.json, *.csv, ...         référentiels, téléchargés depuis S3 s'ils manquent
 ├── analyses_robinet.parquet            fichier produit
 └── analyses_robinet_par_date.parquet   agrégats par installation et par date
 ```
 
-Une fois les fichiers `CAP_*` déposés dans `data/sources/`, il suffit de lancer :
+Une fois les fichiers `CAP_*` déposés dans `data/analyses/sources/`, il suffit de lancer :
 
 ```bash
 npm start
 ```
 
-Tous les fichiers `CAP_PLV_*` / `CAP_RES_*` de `data/sources/` sont traités, quelle que soit la période qu'ils couvrent.
+Tous les fichiers `CAP_PLV_*` / `CAP_RES_*` de `data/analyses/sources/` sont traités, quelle que soit la période qu'ils couvrent.
 
 Pour travailler sur un autre jeu de données (tests, par exemple), on peut passer un autre dossier de travail, organisé de la même façon (sources dans son sous-dossier `sources/`), et éventuellement un autre fichier de sortie :
 
@@ -93,11 +93,11 @@ La sortie par défaut est `<dossier_travail>/analyses_robinet.parquet`. `analyse
 
 Le fichier publié couvre tout l'historique : archives annuelles `eaurob-2017.zip` à `eaurob-2025.zip`, puis archives mensuelles de l'année en cours (`eaurob-202601.zip`…).
 
-1. Télécharger les archives depuis data.gouv.fr (voir Sources) et en extraire uniquement les fichiers `CAP_*` dans `data/sources/` :
+1. Télécharger les archives depuis data.gouv.fr (voir Sources) et en extraire uniquement les fichiers `CAP_*` dans `data/analyses/sources/` :
    ```bash
-   unzip -o -j eaurob-2017.zip 'CAP_*' -d data/sources
+   unzip -o -j eaurob-2017.zip 'CAP_*' -d ../data/analyses/sources
    ```
-2. Lancer `npm start`. Les référentiels absents de `data/` sont téléchargés depuis S3, ce qui demande le `.env`.
+2. Lancer `npm start`. Les référentiels absents de `data/analyses/` sont téléchargés depuis S3, ce qui demande le `.env`.
 
 Ordre de grandeur (2017 à août 2026) : 9,4 Go de sources, 35 secondes, 50,2 millions de lignes, 27 728 installations, 51 row groups, 48 Mo. Un prélèvement republié dans une archive annuelle et dans une archive mensuelle n'est gardé qu'une fois (13 556 prélèvements dans ce cas).
 
@@ -119,7 +119,7 @@ npm test   # tests unitaires des règles d'enrichissement (referentiels.js)
 | `ref_cap_25avril2025.xlsx`          | S3         | Référentiel des captages : `code_installation` → `bss_id_en_bss` (code BSS) |
 | `seuils_qualite_par_parametre.csv`  | ce dépôt   | `code_parametre` → `limite_qualite`, `reference_qualite` (voir ci-dessous) |
 
-Les fichiers `CAP_*` sont lus dans `data/sources/`, les référentiels dans `data/`. Chaque période de `CAP_PLV_*` doit avoir son `CAP_RES_*`, et inversement. Si un `.csv` et un `.txt` existent pour la même période, le `.csv` est utilisé.
+Les fichiers `CAP_*` sont lus dans `data/analyses/sources/`, les référentiels dans `data/analyses/`. Chaque période de `CAP_PLV_*` doit avoir son `CAP_RES_*`, et inversement. Si un `.csv` et un `.txt` existent pour la même période, le `.csv` est utilisé.
 
 ### Sources
 

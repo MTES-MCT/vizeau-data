@@ -21,13 +21,13 @@ approximations connues) est dans `csv-to-parquet-schema-mapping.md` — ce
 document-ci résume le processus dans son ensemble : entrées, sorties,
 contenu.
 
-Ce dossier est **totalement indépendant** de `aac/fiches/` : ses
-propres `package.json`/`node_modules` et son propre `data/` (voir ci-dessous)
-ne dépendent d'aucun fichier généré ou téléchargé par
-`generate_aac_fiches_parquet.js`. Seule la comparaison avec l'ancien `captages.parquet`
-(scripts `compare_captages.mjs`/`investigate_pp_coverage.mjs`) nécessite d'y
-avoir déposé une copie locale de ce fichier (cf. plus bas) — elle n'est pas
-lue directement depuis `aac/fiches/data/`.
+Ce dossier est **totalement indépendant** de `aac/fiches/` : il a ses
+propres `package.json`/`node_modules`, et ses fichiers, rangés dans
+`data/captages/` à la racine du dépôt (voir ci-dessous), ne dépendent d'aucun
+fichier généré ou téléchargé par `generate_aac_fiches_parquet.js`. Seule la
+comparaison avec l'ancien `captages.parquet` (scripts
+`compare_captages.mjs`/`investigate_pp_coverage.mjs`) lit la copie locale du
+bucket, `data/s3/captages.parquet` (cf. plus bas).
 
 ## Installation
 
@@ -38,7 +38,7 @@ npm install
 
 ## Fichiers nécessaires en entrée
 
-Tous locaux, aucun accès réseau/S3 requis pour ce script :
+Tous locaux, dans `data/captages/`, aucun accès réseau/S3 requis pour ce script :
 
 | Fichier                                                              | Rôle                                                                                                   |
 | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -68,14 +68,10 @@ Aucune variable d'environnement requise (contrairement à
 
 ## Artefact produit
 
-**`data/captages_new.parquet`** — fichier candidat, écrit dans le `data/`
-propre à ce dossier (à créer si absent, non versionné). Pour comparer avec
-l'ancien `captages.parquet` (scripts `compare_captages.mjs` et
-`investigate_pp_coverage.mjs`), y déposer une copie locale :
-
-```bash
-cp ../aac/fiches/data/captages.parquet data/captages.parquet
-```
+**`data/captages/captages_new.parquet`** — fichier candidat (non versionné).
+Pour comparer avec l'ancien `captages.parquet` (scripts `compare_captages.mjs`
+et `investigate_pp_coverage.mjs`), utiliser sa copie locale
+`data/s3/captages.parquet`, téléchargée depuis S3 par `aac/fiches`.
 
 ### À quoi il sert
 
@@ -137,7 +133,7 @@ arbitrairement).
 - 13 020 captages rattachés à un groupe via `ref_mca`.
 - 7 252 captages rattachés à un PPE, 28 395 à un PPR, 22 216 à un PPI.
 
-À comparer avec `data/captages.parquet` : 53 775 lignes / 50 823
+À comparer avec `data/s3/captages.parquet` : 53 775 lignes / 50 823
 `t1_code_ins` distincts.
 
 ## Comparaison champ par champ avec `captages.parquet`

@@ -1,5 +1,6 @@
 .idea
 tmp
+/data/
 **/.env
 pmtiles_generator/output/*
 pmtiles_generator/workdir/*

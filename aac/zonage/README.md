@@ -18,7 +18,7 @@ brew install gdal tippecanoe
 ## Usage
 
 1. Placer le PMTiles de zonage existant dans ce dossier sous le nom `zonage.pmtiles`
-2. Vérifier que `../data/AAC.gpkg` est à jour
+2. Vérifier que `data/aac/AAC.gpkg` (à la racine du dépôt) est à jour
 3. Lancer la génération :
 
 ```bash
@@ -28,7 +28,7 @@ npm run zonage
 node zonage/generate_zonage_pmtiles.js
 ```
 
-Le fichier `output/zonage.pmtiles` est produit (environ 1 minute), et copié dans `../data/`.
+Le fichier `output/zonage.pmtiles` est produit (environ 1 minute), et copié dans `data/s3/`.
 
 ### Options
 
@@ -42,7 +42,7 @@ node generate_zonage_pmtiles.js \
 
 | Option | Défaut | Description |
 |---|---|---|
-| `--aac` | `../data/AAC.gpkg` | GeoPackage des AAC |
+| `--aac` | `data/aac/AAC.gpkg` (racine du dépôt) | GeoPackage des AAC |
 | `--layer` | `AAC_FRA` | Couche du GeoPackage |
 | `--base` | `zonage.pmtiles` | PMTiles existant dont on reprend les couches autres que `aac` |
 | `--output` | `output/zonage.pmtiles` | Fichier produit (peut être égal à `--base`) |

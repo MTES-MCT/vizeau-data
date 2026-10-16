@@ -24,7 +24,7 @@
  * joints par DuckDB, qui gère seul les fichiers plus gros que la mémoire.
  *
  * Usage : node --env-file-if-exists=.env generate_analyses_parquet.js [dossier_travail] [sortie.parquet]
- *         (par défaut : data/ et <dossier_travail>/analyses_robinet.parquet ;
+ *         (par défaut : data/analyses/ à la racine du dépôt et <dossier_travail>/analyses_robinet.parquet ;
  *         analyses_robinet_par_date.parquet est écrit dans le même dossier que la sortie ;
  *         les sources sont toujours lues dans <dossier_travail>/sources/)
  *
@@ -43,10 +43,11 @@ import { mkdtemp, open, readdir, readFile, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { dirname, join, resolve } from 'path'
 import { fileURLToPath } from 'url'
+import { dataPath } from '../data-dir.mjs'
 import { buildKeyValueMap, buildParametresEnrichis } from './referentiels.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const WORK_DIR = resolve(process.argv[2] ?? join(__dirname, 'data'))
+const WORK_DIR = resolve(process.argv[2] ?? dataPath('analyses'))
 const OUTPUT = resolve(process.argv[3] ?? join(WORK_DIR, 'analyses_robinet.parquet'))
 const OUTPUT_PAR_DATE = join(dirname(OUTPUT), 'analyses_robinet_par_date.parquet')
 const SOURCES_DIR = join(WORK_DIR, 'sources')

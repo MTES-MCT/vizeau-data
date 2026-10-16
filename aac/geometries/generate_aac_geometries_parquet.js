@@ -1,12 +1,12 @@
 /**
- * Convertit le fichier AAC.gpkg partagé (aac/data/) en aac_hilbert.parquet trié par courbe
+ * Convertit le fichier AAC.gpkg partagé (data/aac/) en aac_hilbert.parquet trié par courbe
  * de Hilbert, et l'écrit dans le même dossier que ce script.
  *
  * Usage :
  *   node generate_aac_geometries_parquet.js [--input <chemin/AAC.gpkg>] [--output <chemin/aac_hilbert.parquet>]
  *
  * Valeurs par défaut :
- *   --input  ../data/AAC.gpkg     (GPKG partagé du dossier aac/)
+ *   --input  data/aac/AAC.gpkg    (GPKG partagé, à la racine du dépôt)
  *   --output output/aac_hilbert.parquet
  */
 
@@ -14,6 +14,7 @@ import { DuckDBInstance } from "@duckdb/node-api";
 import { copyFileSync, existsSync, mkdirSync, unlinkSync } from "fs";
 import { basename, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { dataPath } from "../../data-dir.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -28,7 +29,7 @@ function parseArgs() {
   return {
     input: resolve(
       __dirname,
-      get("--input") ?? "../data/AAC.gpkg"
+      get("--input") ?? dataPath("aac", "AAC.gpkg")
     ),
     output: resolve(
       __dirname,
@@ -137,8 +138,8 @@ console.log(`\n✓ ${output}`);
 console.log(`  ${n} features`);
 console.log(`  Colonnes : ${cols}`);
 
-// Copie dans aac/data/, où les autres scripts (fiches) lisent leurs sources.
-const dataCopy = resolve(__dirname, "../data", basename(output));
+// Copie dans data/s3/, où fiches lit ses sources.
+const dataCopy = dataPath("s3", basename(output));
 if (dataCopy !== output) {
   mkdirSync(dirname(dataCopy), { recursive: true });
   copyFileSync(output, dataCopy);

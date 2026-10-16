@@ -4,7 +4,7 @@
  * (ref_captages_25avril2025) plutôt que de la source privée ARS actuelle.
  *
  * ⚠️ Script de transition, PAS branché sur le pipeline `generate_aac_fiches_parquet.js`.
- * Il écrit `data/captages_new.parquet` (fichier séparé) pour permettre une
+ * Il écrit `data/captages/captages_new.parquet` (fichier séparé) pour permettre une
  * comparaison avant bascule — cf. `csv-to-parquet-schema-mapping.md`.
  *
  * Ne mappe QUE les colonnes de `captages.parquet` réellement lues par
@@ -17,7 +17,7 @@
  *   t1_ins_code_bss, t2_code_ppe, t2_code_ppr, t2_code_ppi,
  *   t1_psv_x, t1_psv_y
  *
- * Sources :
+ * Sources (dans data/captages/) :
  *   - ref_captages_25avril2025/ref_cap_avr25-Tableau 1.csv   (référentiel captages)
  *   - ref_captages_25avril2025/ref_mca_avr25-Tableau 1.csv   (mélanges de captages, pour t1_ins_cap_ref)
  *   - ppe_hilbert.parquet / ppr_hilbert.parquet / ppi_hilbert.parquet
@@ -28,15 +28,13 @@
  */
 
 import { DuckDBInstance } from '@duckdb/node-api'
-import { dirname, join } from 'path'
-import { fileURLToPath } from 'url'
+import { dataPath } from '../data-dir.mjs'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const path = (name) => join(__dirname, name)
+const path = (name) => dataPath('captages', name)
 
-const REF_CAP_CSV = path("data/ref_captages_25avril2025/ref_cap_avr25-Tableau 1.csv")
-const REF_MCA_CSV = path("data/ref_captages_25avril2025/ref_mca_avr25-Tableau 1.csv")
-const OUTPUT = path('data/captages_new.parquet')
+const REF_CAP_CSV = path("ref_captages_25avril2025/ref_cap_avr25-Tableau 1.csv")
+const REF_MCA_CSV = path("ref_captages_25avril2025/ref_mca_avr25-Tableau 1.csv")
+const OUTPUT = path('captages_new.parquet')
 
 // ─── Référentiel des départements (code → nom) ───────────────────────────────
 // Absent du CSV source (qui ne donne que le code `dept_gestionnaire`), requis
@@ -178,7 +176,7 @@ async function buildPpMap(table, outCol) {
       SELECT p.code_installation, z.code_pp AS ${outCol},
              ROW_NUMBER() OVER (PARTITION BY p.code_installation ORDER BY z.code_pp ASC) AS rn
       FROM cap_points p
-      JOIN read_parquet('${path(`data/${table}_hilbert.parquet`)}') z ON ST_Intersects(p.geom_wgs, z.geom)
+      JOIN read_parquet('${path(`${table}_hilbert.parquet`)}') z ON ST_Intersects(p.geom_wgs, z.geom)
     )
     WHERE rn = 1
   `)
@@ -236,5 +234,5 @@ const [stats] = await q(`
 console.log('\n═══ Résumé ═══')
 console.log(stats)
 console.log(
-  '\nÀ comparer avec data/captages.parquet (53 775 lignes / 50 823 t1_code_ins distincts, cf. analyse précédente) avant toute bascule.'
+  '\nÀ comparer avec data/s3/captages.parquet (53 775 lignes / 50 823 t1_code_ins distincts, cf. analyse précédente) avant toute bascule.'
 )

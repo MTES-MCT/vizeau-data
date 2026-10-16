@@ -13,7 +13,7 @@ npm install
 
 ## Usage
 
-1. Placer le fichier `AAC.gpkg` dans `../data/` (partagé avec `../zonage`)
+1. Placer le fichier `AAC.gpkg` dans `data/aac/`, à la racine du dépôt (partagé avec `../zonage`)
 2. Lancer la conversion :
 
 ```bash
@@ -23,7 +23,7 @@ npm run geometries
 node geometries/generate_aac_geometries_parquet.js
 ```
 
-Le fichier `output/aac_hilbert.parquet` est produit, et copié dans `../data/` où `../fiches` le lit. Pour le partager avec l'équipe : `npm run upload -- geometries` depuis `aac/`.
+Le fichier `output/aac_hilbert.parquet` est produit, et copié dans `data/s3/` où `../fiches` le lit. Pour le partager avec l'équipe : `npm run upload -- geometries` depuis `aac/`.
 
 ### Chemins personnalisés
 

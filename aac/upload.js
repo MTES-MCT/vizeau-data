@@ -7,7 +7,7 @@
  *   npm run upload -- geometries fiches  # seulement ces dossiers
  *
  * Destination : s3://<S3_BUCKET>/<S3_PREFIX>/<nom du fichier>, là où fiches
- * va chercher ses sources absentes de data/.
+ * va chercher ses sources absentes de data/s3/.
  *
  * Variables d'environnement (aac/.env) :
  *   S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY  requis
