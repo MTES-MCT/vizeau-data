@@ -14,7 +14,7 @@ Outils des **Aires d'Alimentation de Captage (AAC)**, alimentés par une source 
 
 - [`aac/geometries`](aac/geometries/README.md) — convertit le GeoPackage des AAC en **GeoParquet** (WGS84, ZSTD) trié par courbe de Hilbert, pour des requêtes spatiales performantes avec DuckDB.
 - [`aac/fiches`](aac/fiches/README.md) — pipeline Node.js/DuckDB qui construit une **fiche descriptive par AAC** (surface, emprise, communes, installations de captage, répartition des cultures sur la SAU/PPE/PPR, part du bio, évolution annuelle des cultures) à partir des fichiers Parquet stockés sur S3, puis publie le résultat en `aac.parquet` sur S3.
-- [`aac/zonage`](aac/zonage/README.md) — met à jour les couches **`aac`** et **`sage`** du PMTiles de zonage de protection de l'eau (`ppr`, `ppe`, `aac`, `sage`) via tippecanoe et tile-join, à partir de `data/aac/AAC.gpkg` et de `data/aac/sage.gpkg` (périmètres des SAGE, Gest'eau), en reprenant telles quelles les couches `ppr` et `ppe`.
+- [`aac/zonage`](aac/zonage/README.md) — génère de zéro, via tippecanoe, le PMTiles de zonage de protection de l'eau (`ppr`, `ppe`, `aac`, `sage`) à partir de `data/aac/AAC.gpkg`, `data/aac/sage_shape.zip` (périmètres des SAGE, Gest'eau) et des périmètres de protection `data/captages/ppr_hilbert.parquet` / `ppe_hilbert.parquet` (données sensibles, PPI masqués).
 
 ### [`captages_parquet_generator`](captages_parquet_generator/README.md)
 
@@ -31,9 +31,10 @@ Script Node.js/DuckDB qui génère `analyses_robinet.parquet` : une ligne par **
                  │                                                                 ▼
 data/aac/AAC.gpkg┤                                captages_parquet_generator ──► aac/fiches ──► aac.parquet (S3)
                  │
-                 └──► aac/zonage ──► zonage.pmtiles (couches aac et sage mises à jour)
+                 └──► aac/zonage ──► zonage.pmtiles (ppr, ppe, aac, sage)
                           ▲
-data/aac/sage.gpkg ───────┘
+data/aac/sage_shape.zip ──┤
+data/captages/ppr_hilbert.parquet, ppe_hilbert.parquet ──┘
 
 pmtiles_generator ──► RPG en PMTiles (S3)
 
@@ -48,9 +49,9 @@ Les scripts lisent et écrivent leurs données dans `data/`, à la racine du dé
 data/
 ├── s3/         copie locale du bucket S3 : sources téléchargées par aac/fiches si absentes,
 │               et copies des fichiers produits par aac (aac_hilbert, aac, zonage)
-├── aac/        AAC.gpkg, sage.gpkg, cache des agrégats RPG (cache/), fichiers temporaires de fiches
+├── aac/        AAC.gpkg, sage_shape.zip, cache des agrégats RPG (cache/), fichiers temporaires de fiches
 ├── analyses/   dossier de travail de analyses_parquet_generator : sources/ (CAP_*),
 │               référentiels (téléchargés depuis S3 s'ils manquent), fichiers produits
 └── captages/   entrées (référentiels, périmètres pp*_hilbert) et sortie (captages_new.parquet)
-                de captages_parquet_generator
+                de captages_parquet_generator ; ppr/ppe_hilbert sont aussi lus par aac/zonage
 ```

@@ -1,22 +1,24 @@
 # aac
 
-Outils de génération des données liées aux **Aires d'Alimentation de Captage (AAC)**. Les trois scripts partagent la même source, `data/aac/AAC.gpkg`, et doivent être relancés ensemble quand elle change, pour que les géométries, les fiches et les tuiles restent alignées. `zonage` lit en plus `data/aac/sage.gpkg` pour la couche `sage`.
+Outils de génération des données liées aux **Aires d'Alimentation de Captage (AAC)**. Les trois scripts partagent la même source, `data/aac/AAC.gpkg`, et doivent être relancés ensemble quand elle change, pour que les géométries, les fiches et les tuiles restent alignées. `zonage` lit en plus `data/aac/sage_shape.zip` (couche `sage`) et `data/captages/ppr_hilbert.parquet`, `ppe_hilbert.parquet` (couches `ppr`, `ppe`).
 
 | Dossier | Produit | Description |
 |---|---|---|
 | [`geometries`](geometries/README.md) | `geometries/output/aac_hilbert.parquet` | GeoParquet des AAC (WGS84, ZSTD) trié par courbe de Hilbert |
-| [`zonage`](zonage/README.md) | `zonage/output/zonage.pmtiles` | PMTiles de zonage (`ppr`, `ppe`, `aac`, `sage`) dont les couches `aac` et `sage` sont régénérées |
+| [`zonage`](zonage/README.md) | `zonage/output/zonage.pmtiles` | PMTiles de zonage (`ppr`, `ppe`, `aac`, `sage`), généré de zéro à partir des sources |
 | [`fiches`](fiches/README.md) | `fiches/output/aac.parquet` | Une fiche descriptive par AAC (surface, communes, captages, cultures, bio…) |
 
 ## Sources
 
 `data/aac/AAC.gpkg` — couche `AAC_FRA` du [SANDRE](https://www.sandre.eaufrance.fr/atlas/srv/fre/catalog.search#/metadata/f6a60c29-77dc-4bc1-a8d2-bf0572bf58ab) (service WFS `https://sandre.eaufrance.fr/aac/mapserver/aac`, `OUTPUTFORMAT=GPKG`). Non versionné.
 
-`data/aac/sage.gpkg` — couche `sage_shape` des périmètres des SAGE de [Gest'eau](https://www.gesteau.fr/telecharger/sage) (OIEau), utilisée seulement par `zonage`. Téléchargée depuis le WFS `https://maps.oieau.fr/ows/OIEau/gesteau` (`OUTPUTFORMAT=GPKG`, renvoyé zippé) : voir [`zonage/README.md`](zonage/README.md#télécharger-sagegpkg). Non versionné.
+`data/aac/sage_shape.zip` — shapefile zippé (couche `sage_shape`) des périmètres des SAGE de [Gest'eau](https://www.gesteau.fr/telecharger/sage) (OIEau), utilisé seulement par `zonage`. Téléchargé depuis le WFS `https://maps.oieau.fr/ows/OIEau/gesteau` (`OUTPUTFORMAT=application/shapefile` ; l'export GPKG a des géométries invalides) : voir [`zonage/README.md`](zonage/README.md#télécharger-sage_shapezip). Non versionné.
+
+`data/captages/ppr_hilbert.parquet`, `data/captages/ppe_hilbert.parquet` — périmètres de protection rapprochée et éloignée des captages (`code_pp` et géométrie), utilisés par `zonage` (et par `captages_parquet_generator`). ⚠️ Issus de **sources institutionnelles sensibles**, et **modifiés par l'équipe Viz'eau pour masquer les PPI** ; non téléchargeables depuis une source publique : voir [`zonage/README.md`](zonage/README.md#périmètres-de-protection-ppr_hilbertparquet-ppe_hilbertparquet). Non versionnés.
 
 Les données locales sont rangées dans le dossier `data/` à la racine du dépôt (voir [`data-dir.mjs`](../data-dir.mjs)) :
 
-- `data/aac/` : `AAC.gpkg`, `sage.gpkg`, le cache de `fiches` (`data/aac/cache/`) et ses fichiers temporaires ;
+- `data/aac/` : `AAC.gpkg`, `sage_shape.zip`, le cache de `fiches` (`data/aac/cache/`) et ses fichiers temporaires ;
 - `data/s3/` : copie locale du bucket S3, avec les fichiers téléchargés par `fiches` et les copies des fichiers produits.
 
 Chaque script écrit ses fichiers produits dans son propre sous-dossier `output/` et en dépose une copie dans `data/s3/`, où les autres scripts les lisent. Le S3 ne sert qu'au partage dans l'équipe : `fiches` n'y télécharge que les fichiers absents de `data/s3/`.
@@ -33,9 +35,9 @@ data/aac/AAC.gpkg
    │                                                                  ▼
    │                                       fiches ──► output/aac.parquet ──(copie)──► data/s3/aac.parquet
    │
-   └──► zonage ◄── zonage/zonage.pmtiles (ppr, ppe repris)
+   └──► zonage ◄── data/aac/sage_shape.zip (couche sage)
           ▲
-          └───── data/aac/sage.gpkg (couche sage)
+          └───── data/captages/ppr_hilbert.parquet, ppe_hilbert.parquet (couches ppr, ppe)
           │
           ▼
        output/zonage.pmtiles ──(copie)──► data/s3/zonage.pmtiles
@@ -67,7 +69,7 @@ npm run fiches
 
 Prérequis propres à chaque étape :
 
-- `zonage` : `ogr2ogr`, `tippecanoe` et `tile-join` dans le `PATH`, `data/aac/sage.gpkg`, et le PMTiles de zonage existant dans `zonage/zonage.pmtiles`
+- `zonage` : `ogr2ogr` (avec le pilote Parquet) et `tippecanoe` dans le `PATH`, `data/aac/sage_shape.zip` et les périmètres `data/captages/ppr_hilbert.parquet`, `ppe_hilbert.parquet`
 - `fiches` : fichier `aac/.env` avec les accès S3 (voir `aac/.env.sample`)
 
 ## Upload sur S3

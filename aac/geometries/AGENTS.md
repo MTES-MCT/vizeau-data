@@ -52,6 +52,8 @@ Le GPKG a des noms de colonnes différents du GeoJSON source. La correspondance 
 
 `nom` est nettoyé à la conversion (expression `NOM`) : apostrophes échappées (`''`, `''''`) et typographiques (`’`) ramenées à `'`, tirets et parenthèses mal espacés corrigés, espaces multiples réduits et trim.
 
+Le même nettoyage est appliqué par `aac/zonage` à `NomDeAACAdministratif`, transcrit en JavaScript (`nettoyerLibelle()` dans `generate_zonage_pmtiles.js`). Toute modification de `NOM` doit y être reportée, pour que la carte et les fiches affichent le même nom.
+
 ## Pièges connus
 
 - **`INSTALL spatial` dans DuckDB** peut télécharger l'extension depuis internet au premier lancement — prévoir une connexion réseau.

@@ -53,6 +53,13 @@ intersection spatiale avec le point de chaque captage, les codes de périmètre
 (`t2_code_ppe`/`t2_code_ppr`/`t2_code_ppi`) qu'aucun des deux CSV ne fournit
 directement.
 
+⚠️ Ces périmètres de protection proviennent de **sources institutionnelles
+sensibles** et ne sont pas téléchargeables depuis une source publique.
+`ppe_hilbert.parquet` et `ppr_hilbert.parquet` ont été **modifiés par l'équipe
+Viz'eau pour masquer les PPI**. Ces deux fichiers servent aussi à générer les
+couches `ppe` et `ppr` du PMTiles de zonage (voir
+[`aac/zonage`](../aac/zonage/README.md#périmètres-de-protection-ppr_hilbertparquet-ppe_hilbertparquet)).
+
 La table de correspondance code département → nom (`t1_dep_geo_lib`, absente
 du CSV) est codée en dur dans le script (`DEPARTEMENTS`), pas besoin de
 fichier externe.
