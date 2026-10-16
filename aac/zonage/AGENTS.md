@@ -4,7 +4,7 @@
 
 Ce dossier contient un **script one-shot** : `generate_zonage_pmtiles.js`.
 
-Il remplace la couche `aac` d'un PMTiles de zonage existant (`water_protection` : `ppr`, `ppe`, `aac`, `sage`) par une couche générée depuis `AAC.gpkg`, sans toucher aux tuiles des autres couches. Le résultat est écrit dans `output/`, avec une copie dans `data/s3/` (racine du dépôt). Aucune dépendance réseau ni credentials ne sont requis.
+Il remplace les couches `aac` et `sage` d'un PMTiles de zonage existant (`water_protection` : `ppr`, `ppe`, `aac`, `sage`) par des couches générées depuis `data/aac/AAC.gpkg` et `data/aac/sage.gpkg` (périmètres des SAGE de Gest'eau, voir le README pour le téléchargement), sans toucher aux tuiles des couches `ppr` et `ppe`. Le résultat est écrit dans `output/`, avec une copie dans `data/s3/` (racine du dépôt). Aucune dépendance réseau ni credentials ne sont requis.
 
 ## Commande
 
@@ -12,15 +12,15 @@ Il remplace la couche `aac` d'un PMTiles de zonage existant (`water_protection` 
 # depuis aac/
 npm run zonage
 # ou
-node zonage/generate_zonage_pmtiles.js [--aac AAC.gpkg] [--layer AAC_FRA] [--base zonage.pmtiles] [--output output/zonage.pmtiles]
+node zonage/generate_zonage_pmtiles.js [--aac AAC.gpkg] [--layer AAC_FRA] [--sage sage.gpkg] [--sage-layer sage_shape] [--base zonage.pmtiles] [--output output/zonage.pmtiles]
 ```
 
 ## Architecture de generate_zonage_pmtiles.js
 
-1. **Arguments CLI** — `parseArgs()`, chemins résolus depuis `__dirname` ; vérification des fichiers d'entrée et des outils (`ogr2ogr`, `tippecanoe`, `tile-join`)
+1. **Arguments CLI** — `parseArgs()`, chemins résolus depuis `__dirname` ; `SOURCES` liste les couches régénérées (nom, GPKG, requête SQL) ; vérification des fichiers d'entrée et des outils (`ogr2ogr`, `tippecanoe`, `tile-join`)
 2. **PMTiles v3** — `readHeader()`, `readMetadata()`, `writeWithMetadata()` : lecture et réécriture du bloc de métadonnées, sans librairie
-3. **Génération** — 4 étapes dans un dossier temporaire (`mkdtemp`) : export GeoJSON, tippecanoe, tile-join ×2, correction des métadonnées
-4. **Vérification** — nombre d'entités `aac` dans les tilestats = nombre d'AAC exportées
+3. **Génération** — 4 étapes dans un dossier temporaire (`mkdtemp`) : export GeoJSON de chaque source, un seul tippecanoe pour toutes les couches de `SOURCES`, tile-join ×2, correction des métadonnées
+4. **Vérification** — pour chaque couche de `SOURCES`, nombre d'entités dans les tilestats = nombre d'entités exportées
 
 ## Conventions critiques
 
@@ -32,13 +32,20 @@ Les offsets des leaf directories et des tuiles sont relatifs à leur section : `
 
 ### Métadonnées corrigées après tile-join
 - `generator_options` : premier segment (séparateur `"; "`) du PMTiles de base + étapes de régénération avec des noms de fichiers génériques. Ne jamais y laisser de chemin local.
-- `tilestats` : `aac` depuis le PMTiles produit par tippecanoe, les autres couches depuis la base.
+- `tilestats` : couches de `SOURCES` depuis le PMTiles produit par tippecanoe, les autres (`ppr`, `ppe`) depuis la base.
 - `strategies` : reprises de la base, sinon tile-join les additionne à chaque exécution.
 
 Grâce à ces corrections, le script est idempotent : relancé avec sa propre sortie comme `--base`, il produit un fichier identique octet pour octet.
 
-### Typage des champs AAC
-L'export `ogr2ogr` utilise une requête SQLite qui caste `CdAAC` et les dates en texte et `ArreteDelimitationAAC` en entier, pour garder les types de la couche `aac` d'origine. La liste des champs est explicite : un nouveau champ du GPKG n'apparaîtra pas sans modification de la requête.
+### Typage des champs
+Chaque export `ogr2ogr` utilise une requête SQLite (dans `SOURCES`) qui reproduit le schéma de la couche d'origine :
+- `aac` : `CdAAC` et dates castés en texte, `ArreteDelimitationAAC` en entier ;
+- `sage` : `cd_type_perimetre`/`lb_type_perimetre` renommés en `cd_type_pe`/`lb_type_pe` (noms tronqués de l'export shapefile Gest'eau d'origine).
+
+Les listes de champs sont explicites : un nouveau champ d'un GPKG n'apparaîtra pas sans modification de la requête.
+
+### Ajouter une couche régénérée
+Ajouter une entrée à `SOURCES` (et l'option CLI du fichier source) suffit : export, tuilage, exclusion de la base, tilestats, `generator_options` et vérification en dérivent.
 
 ## Pièges connus
 

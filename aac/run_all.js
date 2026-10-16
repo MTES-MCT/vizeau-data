@@ -2,6 +2,7 @@
  * Régénère toutes les données AAC à partir de data/aac/AAC.gpkg, dans l'ordre :
  *   1. geometries → geometries/output/aac_hilbert.parquet (copie dans data/s3/)
  *   2. zonage     → zonage/output/zonage.pmtiles (copie dans data/s3/)
+ *                   (lit aussi data/aac/sage.gpkg pour la couche sage)
  *   3. fiches     → fiches/output/aac.parquet (copie dans data/s3/)
  *                   (lit data/s3/aac_hilbert.parquet produit à l'étape 1)
  *

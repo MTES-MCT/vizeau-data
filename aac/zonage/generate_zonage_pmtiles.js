@@ -1,15 +1,18 @@
 /**
- * Régénère la couche `aac` d'un PMTiles de zonage (couches ppr, ppe, aac, sage)
- * à partir du GeoPackage des AAC, en conservant telles quelles les autres couches.
+ * Régénère les couches `aac` et `sage` d'un PMTiles de zonage (couches ppr, ppe,
+ * aac, sage) à partir de leurs GeoPackages sources, en conservant telles quelles
+ * les couches ppr et ppe.
  *
  * Usage :
- *   node generate_zonage_pmtiles.js [--aac <AAC.gpkg>] [--base <zonage.pmtiles>] [--output <zonage.pmtiles>]
+ *   node generate_zonage_pmtiles.js [--aac <AAC.gpkg>] [--sage <sage.gpkg>] [--base <zonage.pmtiles>] [--output <zonage.pmtiles>]
  *
  * Valeurs par défaut (relatives au dossier de ce script) :
- *   --aac     data/aac/AAC.gpkg      (à la racine du dépôt)
- *   --layer   AAC_FRA                (couche du GPKG)
- *   --base    zonage.pmtiles         (PMTiles existant dont on reprend ppr, ppe, sage)
- *   --output  output/zonage.pmtiles
+ *   --aac         data/aac/AAC.gpkg      (à la racine du dépôt)
+ *   --layer       AAC_FRA                (couche du GPKG des AAC)
+ *   --sage        data/aac/sage.gpkg     (à la racine du dépôt)
+ *   --sage-layer  sage_shape             (couche du GPKG des SAGE)
+ *   --base        zonage.pmtiles         (PMTiles existant dont on reprend ppr, ppe)
+ *   --output      output/zonage.pmtiles
  *
  * Outils externes requis dans le PATH : ogr2ogr (GDAL), tippecanoe, tile-join.
  */
@@ -38,14 +41,47 @@ function parseArgs() {
   return {
     aac: resolve(__dirname, get("--aac") ?? dataPath("aac", "AAC.gpkg")),
     layer: get("--layer") ?? "AAC_FRA",
+    sage: resolve(__dirname, get("--sage") ?? dataPath("aac", "sage.gpkg")),
+    sageLayer: get("--sage-layer") ?? "sage_shape",
     base: resolve(__dirname, get("--base") ?? "zonage.pmtiles"),
     output: resolve(__dirname, get("--output") ?? "output/zonage.pmtiles"),
   };
 }
 
-const { aac, layer, base, output } = parseArgs();
+const { aac, layer, sage, sageLayer, base, output } = parseArgs();
 
-for (const f of [aac, base]) {
+// Couches régénérées depuis leur GeoPackage. Les champs sont typés comme dans
+// les couches d'origine du PMTiles ; les autres couches (ppr, ppe) sont reprises
+// telles quelles depuis le PMTiles de base.
+const SOURCES = [
+  {
+    // CdAAC et dates en texte, ArreteDelimitationAAC en entier. Les champs JSON
+    // (AdminAAC, PTP…) sont sérialisés en chaîne par tippecanoe.
+    layer: "aac",
+    file: aac,
+    sql: `
+      SELECT CAST(CdAAC AS TEXT) AS CdAAC, NomDeAACAdministratif, NomDeAACUsage, NomDeAACAutre,
+             CAST(DateCreationAAC AS TEXT) AS DateCreationAAC, CAST(DateMajAAC AS TEXT) AS DateMajAAC,
+             StAAC, ComAAC, NumCircAdminBassin, NomCircAdminBassin, NivQualite,
+             CAST(ArreteDelimitationAAC AS INTEGER) AS ArreteDelimitationAAC,
+             CAST(DateArreteDelim AS TEXT) AS DateArreteDelim, DepArreteDelim,
+             AdminAAC, CommandAAC, CodesAlternatifs, PTP, geom
+      FROM "${layer}"`,
+  },
+  {
+    // cd_type_pe et lb_type_pe : noms tronqués à 10 caractères de l'export
+    // shapefile Gest'eau dont provenait la couche sage d'origine.
+    layer: "sage",
+    file: sage,
+    sql: `
+      SELECT nid, nom, type, code, cd_etat, lb_etat, cd_ss_etat, lb_ss_etat,
+             cd_comite, lb_comite, necess2010, necess2016,
+             cd_type_perimetre AS cd_type_pe, lb_type_perimetre AS lb_type_pe, geom
+      FROM "${sageLayer}"`,
+  },
+];
+
+for (const f of [aac, sage, base]) {
   if (!existsSync(f)) {
     console.error(`Erreur : fichier introuvable : ${f}`);
     process.exit(1);
@@ -161,45 +197,42 @@ const name = baseMeta.name ?? "water_protection";
 const description = baseMeta.description ?? "PPR, PPE, AAC, SAGE";
 
 const tmp = mkdtempSync(join(tmpdir(), "zonage-pmtiles-"));
-const aacGeojson = join(tmp, "aac.geojsonl");
-const aacPmtiles = join(tmp, "aac.pmtiles");
-const sansAacPmtiles = join(tmp, "sans_aac.pmtiles");
+const regenPmtiles = join(tmp, "regen.pmtiles");
+const sansRegenPmtiles = join(tmp, "sans_regen.pmtiles");
 const joinedPmtiles = join(tmp, "joined.pmtiles");
 
 try {
-  // Étape 1 : export de la couche AAC en GeoJSON (une entité par ligne).
-  // Les champs sont typés comme dans la couche `aac` d'origine : CdAAC et dates
-  // en texte, ArreteDelimitationAAC en entier. Les champs JSON (AdminAAC, PTP…)
-  // sont sérialisés en chaîne par tippecanoe.
-  console.log(`\n[1/4] Export de ${aac} (couche ${layer})`);
-  sh("ogr2ogr", [
-    "-f", "GeoJSONSeq", aacGeojson, aac,
-    "-t_srs", "EPSG:4326", "-lco", "RS=NO", "-nln", "aac",
-    "-dialect", "SQLite", "-sql", `
-      SELECT CAST(CdAAC AS TEXT) AS CdAAC, NomDeAACAdministratif, NomDeAACUsage, NomDeAACAutre,
-             CAST(DateCreationAAC AS TEXT) AS DateCreationAAC, CAST(DateMajAAC AS TEXT) AS DateMajAAC,
-             StAAC, ComAAC, NumCircAdminBassin, NomCircAdminBassin, NivQualite,
-             CAST(ArreteDelimitationAAC AS INTEGER) AS ArreteDelimitationAAC,
-             CAST(DateArreteDelim AS TEXT) AS DateArreteDelim, DepArreteDelim,
-             AdminAAC, CommandAAC, CodesAlternatifs, PTP, geom
-      FROM "${layer}"`,
-  ]);
-  const nbAac = readFileSync(aacGeojson, "utf8").split("\n").filter(Boolean).length;
+  // Étape 1 : export de chaque couche source en GeoJSON (une entité par ligne),
+  // avec le typage défini dans SOURCES.
+  console.log("\n[1/4] Export des couches sources");
+  const counts = {};
+  for (const s of SOURCES) {
+    s.geojson = join(tmp, `${s.layer}.geojsonl`);
+    sh("ogr2ogr", [
+      "-f", "GeoJSONSeq", s.geojson, s.file,
+      "-t_srs", "EPSG:4326", "-lco", "RS=NO", "-nln", s.layer,
+      "-dialect", "SQLite", "-sql", s.sql,
+    ]);
+    counts[s.layer] = readFileSync(s.geojson, "utf8").split("\n").filter(Boolean).length;
+  }
 
-  // Étape 2 : tuilage de la couche AAC, avec les options du PMTiles d'origine.
-  console.log("\n[2/4] Tuilage de la couche aac");
+  // Étape 2 : tuilage des couches régénérées ensemble, avec les options du
+  // PMTiles d'origine : --drop-densest-as-needed opère sur l'ensemble de ces couches.
+  console.log("\n[2/4] Tuilage des couches régénérées");
   sh("tippecanoe", [
-    `--output=${aacPmtiles}`, "--force", `--name=${name}`, `--description=${description}`,
-    "-z14", "-Z0", "-L", `aac:${aacGeojson}`, "--drop-densest-as-needed", "--quiet",
+    `--output=${regenPmtiles}`, "--force", `--name=${name}`, `--description=${description}`,
+    "-z14", "-Z0", ...SOURCES.flatMap((s) => ["-L", `${s.layer}:${s.geojson}`]),
+    "--drop-densest-as-needed", "--quiet",
   ]);
 
-  // Étape 3 : retrait de l'ancienne couche aac, puis fusion. -pk évite que
-  // tile-join ne supprime des entités dans les tuiles dépassant 500 Ko.
-  console.log("\n[3/4] Fusion avec les autres couches du PMTiles de base");
-  sh("tile-join", ["-f", "--quiet", "-o", sansAacPmtiles, "-L", "aac", base]);
+  // Étape 3 : retrait des anciennes versions des couches régénérées, puis fusion.
+  // -pk évite que tile-join ne supprime des entités dans les tuiles dépassant 500 Ko.
+  console.log("\n[3/4] Fusion avec les couches reprises du PMTiles de base");
+  const exclusions = SOURCES.flatMap((s) => ["-L", s.layer]);
+  sh("tile-join", ["-f", "--quiet", "-o", sansRegenPmtiles, ...exclusions, base]);
   sh("tile-join", [
     "-f", "--quiet", "-pk", "-n", name, "-N", description,
-    "-o", joinedPmtiles, sansAacPmtiles, aacPmtiles,
+    "-o", joinedPmtiles, sansRegenPmtiles, regenPmtiles,
   ]);
 
   // Étape 4 : correction des métadonnées laissées par tile-join.
@@ -207,23 +240,26 @@ try {
   //     locaux ; on garde la commande tippecanoe d'origine et on décrit les
   //     étapes de régénération avec des noms de fichiers génériques.
   //   - tilestats : tile-join compte les occurrences par tuile, pas les entités ;
-  //     on reprend ceux de tippecanoe pour aac et ceux de la base pour le reste.
+  //     on reprend ceux de tippecanoe pour les couches régénérées et ceux de la
+  //     base pour le reste.
   //   - strategies : tile-join additionne celles de ses entrées, ce qui les
   //     ferait grossir à chaque régénération ; on garde celles de la base.
   console.log("\n[4/4] Correction des métadonnées");
   const meta = readMetadata(joinedPmtiles);
-  const aacMeta = readMetadata(aacPmtiles);
+  const regenMeta = readMetadata(regenPmtiles);
 
   const origine = (baseMeta.generator_options ?? "").split("; ")[0];
+  const exclusionsGeneriques = SOURCES.map((s) => `-L ${s.layer}`).join(" ");
+  const couchesGeneriques = SOURCES.map((s) => `-L ${s.layer}:${s.layer}.geojsonl`).join(" ");
   meta.generator_options = [
     origine,
-    `tile-join -o sans_aac.pmtiles -L aac ${name}.pmtiles`,
-    `tippecanoe '--output=aac.pmtiles' '--name=${name}' '--description=${description}' -z14 -Z0 -L aac:aac.geojsonl --drop-densest-as-needed`,
-    `tile-join -pk -n ${name} -N '${description}' -o zonage.pmtiles sans_aac.pmtiles aac.pmtiles`,
+    `tile-join -o sans_regen.pmtiles ${exclusionsGeneriques} ${name}.pmtiles`,
+    `tippecanoe '--output=regen.pmtiles' '--name=${name}' '--description=${description}' -z14 -Z0 ${couchesGeneriques} --drop-densest-as-needed`,
+    `tile-join -pk -n ${name} -N '${description}' -o zonage.pmtiles sans_regen.pmtiles regen.pmtiles`,
   ].filter(Boolean).join("; ");
 
   const stats = Object.fromEntries((baseMeta.tilestats?.layers ?? []).map((l) => [l.layer, l]));
-  stats.aac = aacMeta.tilestats.layers.find((l) => l.layer === "aac");
+  for (const l of regenMeta.tilestats.layers) stats[l.layer] = l;
   const layers = meta.tilestats.layers.map((l) => stats[l.layer] ?? l);
   meta.tilestats = { layerCount: layers.length, layers };
 
@@ -242,9 +278,11 @@ try {
   for (const l of final.tilestats.layers) {
     console.log(`  ${l.layer.padEnd(5)} ${String(l.count).padStart(6)} entités, ${l.attributeCount} attributs`);
   }
-  const finalAac = final.tilestats.layers.find((l) => l.layer === "aac");
-  if (finalAac?.count !== nbAac) {
-    throw new Error(`Couche aac : ${finalAac?.count} entités tuilées pour ${nbAac} AAC dans le GPKG`);
+  for (const s of SOURCES) {
+    const tuilees = final.tilestats.layers.find((l) => l.layer === s.layer)?.count;
+    if (tuilees !== counts[s.layer]) {
+      throw new Error(`Couche ${s.layer} : ${tuilees} entités tuilées pour ${counts[s.layer]} dans le GPKG`);
+    }
   }
 
   // Copie dans data/s3/, avec les autres fichiers du bucket.
