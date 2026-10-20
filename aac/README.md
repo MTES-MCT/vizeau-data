@@ -32,6 +32,8 @@ data/aac/AAC.gpkg
    │                                                                  │
    │        data/s3/captages.parquet, aac_pp_zones.parquet,           │
    │        communes, RPG (S3 si absents de data/s3/) ────────────────┤
+   │        data/captages/captages_prioritaires.parquet               │
+   │        (captages_parquet_generator) ─────────────────────────────┤
    │                                                                  ▼
    │                                       fiches ──► output/aac.parquet ──(copie)──► data/s3/aac.parquet
    │
@@ -70,7 +72,7 @@ npm run fiches
 Prérequis propres à chaque étape :
 
 - `zonage` : `ogr2ogr` (avec le pilote Parquet) et `tippecanoe` dans le `PATH`, `data/aac/sage_shape.zip` et les périmètres `data/captages/ppr_hilbert.parquet`, `ppe_hilbert.parquet`
-- `fiches` : fichier `aac/.env` avec les accès S3 (voir `aac/.env.sample`)
+- `fiches` : fichier `aac/.env` avec les accès S3 (voir `aac/.env.sample`), et `data/captages/captages_prioritaires.parquet` produit par [`captages_parquet_generator`](../captages_parquet_generator/README.md#captages_prioritairesparquet) (flag `prioritaire` des installations)
 
 ## Upload sur S3
 

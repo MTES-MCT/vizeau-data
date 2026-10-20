@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
- * Génère un `captages.parquet` candidat à partir du référentiel CSV
- * (ref_captages_25avril2025) plutôt que de la source privée ARS actuelle.
+ * Génère un `captages.parquet` candidat à partir du référentiel DGS des
+ * captages (DGS_ref_cap_06_05_2026) plutôt que de la source privée ARS actuelle,
+ * ainsi qu'une table de correspondance des identifiants de captage
+ * (`captages_identifiants.parquet`).
  *
  * ⚠️ Script de transition, PAS branché sur le pipeline `generate_aac_fiches_parquet.js`.
  * Il écrit `data/captages/captages_new.parquet` (fichier séparé) pour permettre une
@@ -18,8 +20,11 @@
  *   t1_psv_x, t1_psv_y
  *
  * Sources (dans data/captages/) :
- *   - ref_captages_25avril2025/ref_cap_avr25-Tableau 1.csv   (référentiel captages)
- *   - ref_captages_25avril2025/ref_mca_avr25-Tableau 1.csv   (mélanges de captages, pour t1_ins_cap_ref)
+ *   - DGS_ref_cap_06_05_2026/cap.csv   (référentiel captages, source principale)
+ *   - DGS_ref_cap_06_05_2026/mca.csv   (mélanges de captages, pour t1_ins_cap_ref
+ *     et pour les codes BSS des captages membres)
+ *   - DGS_ref_cap_23_02_2024/cap.csv   (une ligne par point de surveillance, PSV
+ *     principaux et secondaires : seule source du lien PSV secondaire → INS)
  *   - ppe_hilbert.parquet / ppr_hilbert.parquet / ppi_hilbert.parquet
  *     (zonage des périmètres de protection, pour t2_code_ppe/ppr/ppi par
  *     intersection spatiale avec le point du captage)
@@ -29,12 +34,15 @@
 
 import { DuckDBInstance } from '@duckdb/node-api'
 import { dataPath } from '../data-dir.mjs'
+import { NORMALISATION_MACROS } from './normalisation.js'
 
 const path = (name) => dataPath('captages', name)
 
-const REF_CAP_CSV = path("ref_captages_25avril2025/ref_cap_avr25-Tableau 1.csv")
-const REF_MCA_CSV = path("ref_captages_25avril2025/ref_mca_avr25-Tableau 1.csv")
+const REF_CAP_CSV = path('DGS_ref_cap_06_05_2026/cap.csv')
+const REF_MCA_CSV = path('DGS_ref_cap_06_05_2026/mca.csv')
+const REF_PSV_CSV = path('DGS_ref_cap_23_02_2024/cap.csv')
 const OUTPUT = path('captages_new.parquet')
+const OUTPUT_IDENTIFIANTS = path('captages_identifiants.parquet')
 
 // ─── Référentiel des départements (code → nom) ───────────────────────────────
 // Absent du CSV source (qui ne donne que le code `dept_gestionnaire`), requis
@@ -86,6 +94,10 @@ const q = (sql) => conn.runAndReadAll(sql).then((r) => r.getRowObjects())
 
 console.log('═══ Génération de captages_new.parquet depuis le CSV ═══\n')
 
+// Macros norm_ins, norm_psv, norm_bss_indice, norm_bss_id, bss_designation et
+// coord : voir normalisation.js.
+await run(NORMALISATION_MACROS)
+
 // ─── Table des départements ───────────────────────────────────────────────────
 
 await run(`CREATE TABLE dept_lookup (code VARCHAR, nom VARCHAR)`)
@@ -93,22 +105,29 @@ const deptValues = DEPARTEMENTS.map(([code, nom]) => `('${code}', '${nom.replace
 await run(`INSERT INTO dept_lookup VALUES ${deptValues}`)
 
 // ─── Référentiel captages ─────────────────────────────────────────────────────
+//
+// Lu entièrement en texte : la détection automatique des types prendrait
+// certains codes pour des nombres, et les coordonnées sont écrites tantôt avec
+// une virgule décimale (`922965,323`), tantôt sans décimale (macro `coord`).
+// Les ~2 700 captages au statut « gelé » (`statut_captage = 'G'`, absents de la
+// dernière extraction SISE-Eaux, presque tous les champs vides) sont conservés,
+// comme avec le référentiel précédent.
 
 let t = Date.now()
 await run(`
   CREATE TABLE cap_raw AS
-  SELECT * FROM read_csv('${REF_CAP_CSV}', header=true, delim=';')
+  SELECT * FROM read_csv('${REF_CAP_CSV}', header=true, delim=';', all_varchar=true)
 `)
 const [{ n: nbCapRaw }] = await q(`SELECT COUNT(*) n FROM cap_raw`)
-console.log(`  ${nbCapRaw} lignes chargées depuis ref_cap_avr25 (${Date.now() - t}ms)`)
+console.log(`  ${nbCapRaw} lignes chargées depuis le référentiel captages (${Date.now() - t}ms)`)
 
 // ─── Regroupements "mélanges de captages" (t1_ins_cap_ref) ───────────────────
 //
-// ref_mca liste, pour chaque code_mca_national, les code_captage_principal_sise
+// mca.csv liste, pour chaque code_mca_national, les code_captage_principal_sise
 // (SISE) qui en sont membres. Faute de documentation exacte sur le membre à
 // choisir comme "référence" d'un groupe, on prend arbitrairement (mais de
 // façon déterministe) le plus petit code du groupe — approximation à valider,
-// cf. csv-to-parquet-schema-mapping.md. Les captages absents de ref_mca (la
+// cf. csv-to-parquet-schema-mapping.md. Les captages absents de mca.csv (la
 // grande majorité) n'ont pas de cap_ref : le pipeline retombe alors sur leur
 // propre code (`t1_ins_cap_ref || t1_code_ins`), comme aujourd'hui.
 
@@ -118,10 +137,14 @@ console.log(`  ${nbCapRaw} lignes chargées depuis ref_cap_avr25 (${Date.now() -
 // 1:1 avec le schéma attendu par `generate_aac_fiches_parquet.js`.
 t = Date.now()
 await run(`
+  CREATE TABLE mca_raw AS
+  SELECT * FROM read_csv('${REF_MCA_CSV}', header=true, delim=';', all_varchar=true)
+`)
+await run(`
   CREATE TABLE cap_ref_map AS
   WITH membres AS (
     SELECT DISTINCT code_mca_national, code_captage_principal_sise AS code_installation
-    FROM read_csv('${REF_MCA_CSV}', header=true, delim=';')
+    FROM mca_raw
     WHERE code_captage_principal_sise IS NOT NULL AND code_captage_principal_sise != ''
   ),
   ref_par_groupe AS (
@@ -139,7 +162,7 @@ await run(`
   SELECT code_installation, t1_ins_cap_ref, t1_ins_cap_ref_lib FROM candidats WHERE rn = 1
 `)
 const [{ n: nbCapRef }] = await q(`SELECT COUNT(*) n FROM cap_ref_map`)
-console.log(`  ${nbCapRef} captages rattachés à un groupe via ref_mca (${Date.now() - t}ms)`)
+console.log(`  ${nbCapRef} captages rattachés à un groupe via mca.csv (${Date.now() - t}ms)`)
 
 // ─── Points de captage en WGS84 (pour la jointure spatiale PPE/PPR/PPI) ──────
 
@@ -147,16 +170,16 @@ t = Date.now()
 await run(`
   CREATE TABLE cap_points AS
   SELECT code_installation,
-         TRY_CAST(x_l93_installation AS DOUBLE) AS x_l93,
-         TRY_CAST(y_l93_installation AS DOUBLE) AS y_l93,
+         coord(x_l93_installation) AS x_l93,
+         coord(y_l93_installation) AS y_l93,
          ST_Transform(
-           ST_Point(TRY_CAST(x_l93_installation AS DOUBLE), TRY_CAST(y_l93_installation AS DOUBLE)),
+           ST_Point(coord(x_l93_installation), coord(y_l93_installation)),
            'EPSG:2154', 'EPSG:4326', true
          ) AS geom_wgs
   FROM cap_raw
-  WHERE TRY_CAST(x_l93_installation AS DOUBLE) IS NOT NULL
-    AND TRY_CAST(y_l93_installation AS DOUBLE) IS NOT NULL
-    AND NOT (TRY_CAST(x_l93_installation AS DOUBLE) = 0 AND TRY_CAST(y_l93_installation AS DOUBLE) = 0)
+  WHERE coord(x_l93_installation) IS NOT NULL
+    AND coord(y_l93_installation) IS NOT NULL
+    AND NOT (coord(x_l93_installation) = 0 AND coord(y_l93_installation) = 0)
 `)
 console.log(`  Points de captage projetés en WGS84 (${Date.now() - t}ms)`)
 
@@ -199,7 +222,7 @@ await run(`
       COALESCE(NULLIF(r.nom_commune_actuelle, ''), NULLIF(r.nom_commune_dans_sise, '')) AS t1_com_nom,
       r.code_insee_commune_sise                     AS t1_com_insee,
       UPPER(r.libel_etat)                           AS t1_ins_etat_lib,
-      NULL                                          AS t1_uge_mo_nom,
+      NULL::VARCHAR                                 AS t1_uge_mo_nom,
       d.nom                                         AS t1_dep_geo_lib,
       UPPER(r.nature_point_eau)                     AS t1_cap_type_lib,
       r.type_eau                                    AS t1_ins_nat_code,
@@ -224,6 +247,87 @@ await run(`
 `)
 console.log(`\n  Fichier écrit : ${OUTPUT} (${Date.now() - t}ms)`)
 
+// ─── Table de correspondance des identifiants ─────────────────────────────────
+//
+// Selon les sources, un captage (installation SISE-Eaux, code INS) est désigné
+// par son code INS, par le code d'un de ses points de surveillance (PSV) ou par
+// un code BSS, ancien (indice) ou nouveau (BSS_ID). Cette table donne, pour
+// chaque captage du référentiel, tous les codes connus, une ligne par code :
+//
+//   code_installation  captage du référentiel (clé de captages_new.parquet)
+//   type_code          INS | PSV | BSS_INDICE | BSS_ID
+//   code               code normalisé (macros norm_*)
+//   complement         PSV : catégorie P (principal) ou S (secondaire) ;
+//                      BSS : désignation (`P1`, `F`…), celle du BRGM en priorité
+//   sources            fichiers et champs où le code a été trouvé :
+//                        cap_2026       code_installation, psv_code (référentiel 2026)
+//                        cap_2026_brgm  code_bss_en_bss, bss_id_en_bss (saisis par le BRGM)
+//                        cap_2026_sise  indice_bss_sise (saisi par l'ARS dans SISE-Eaux)
+//                        cap_2024       PSV et code BSS du référentiel 2024
+//                        mca_2026       codes BSS des captages membres d'un mélange
+//
+// Le référentiel 2026 ne donne que le PSV principal de chaque captage ; celui
+// de 2024 a une ligne par PSV, secondaires compris : c'est la seule source du
+// lien PSV secondaire → INS. Seuls les captages du référentiel 2026 sont
+// gardés, pour que toute résolution d'un code aboutisse à une ligne de
+// captages_new.parquet.
+//
+// Un même code peut désigner plusieurs captages (code BSS partagé, saisie
+// erronée) : la table garde toutes les correspondances, le résumé compte ces
+// codes ambigus.
+
+t = Date.now()
+await run(`
+  CREATE TABLE psv_raw AS
+  SELECT * FROM read_csv('${REF_PSV_CSV}', header=true, delim=';', skip=10, quote='"', escape='"', all_varchar=true)
+`)
+await run(`
+  CREATE TABLE identifiants AS
+  WITH codes_bss AS (
+    SELECT code_installation, code_bss_en_bss AS valeur, bss_designation(code_bss_en_bss) AS designation,
+           'cap_2026_brgm' AS source, 1 AS priorite
+    FROM cap_raw
+    UNION ALL
+    SELECT code_installation, bss_id_en_bss, NULL, 'cap_2026_brgm', 1 FROM cap_raw
+    UNION ALL
+    SELECT code_installation, indice_bss_sise, NULLIF(upper(trim(designation_bss_sise)), ''), 'cap_2026_sise', 2
+    FROM cap_raw
+    UNION ALL
+    SELECT norm_ins("INS - Code national"), "CAP - BSS - Code", NULLIF(upper(trim("CAP - BSS - Désignation")), ''),
+           'cap_2024', 3
+    FROM psv_raw
+    UNION ALL
+    SELECT norm_ins(code_captage_principal_sise), indice_bss_sise, NULL, 'mca_2026', 4 FROM mca_raw
+    UNION ALL
+    SELECT norm_ins(code_captage_principal_sise), bss_id_sise, NULL, 'mca_2026', 4 FROM mca_raw
+  ),
+  codes AS (
+    SELECT code_installation, 'INS' AS type_code, code_installation AS code, NULL AS complement,
+           'cap_2026' AS source, 0 AS priorite
+    FROM cap_raw
+    UNION ALL
+    SELECT code_installation, 'PSV', norm_psv(psv_code), NULL, 'cap_2026', 0 FROM cap_raw
+    UNION ALL
+    SELECT norm_ins("INS - Code national"), 'PSV', norm_psv("PSV - Code national"), "PSV - Catégorie (P/S) - Code",
+           'cap_2024', 3
+    FROM psv_raw
+    UNION ALL
+    SELECT code_installation, 'BSS_INDICE', norm_bss_indice(valeur), designation, source, priorite FROM codes_bss
+    UNION ALL
+    SELECT code_installation, 'BSS_ID', norm_bss_id(valeur), designation, source, priorite FROM codes_bss
+  )
+  SELECT code_installation, type_code, code,
+         arg_min(complement, priorite) FILTER (WHERE complement IS NOT NULL) AS complement,
+         list_sort(list_distinct(list(source))) AS sources
+  FROM codes
+  WHERE code IS NOT NULL
+    AND code_installation IN (SELECT code_installation FROM cap_raw)
+  GROUP BY code_installation, type_code, code
+  ORDER BY code_installation, type_code, code
+`)
+await run(`COPY identifiants TO '${OUTPUT_IDENTIFIANTS}' (FORMAT PARQUET)`)
+console.log(`  Fichier écrit : ${OUTPUT_IDENTIFIANTS} (${Date.now() - t}ms)`)
+
 // ─── Résumé ───────────────────────────────────────────────────────────────────
 
 const [stats] = await q(`
@@ -236,3 +340,25 @@ console.log(stats)
 console.log(
   '\nÀ comparer avec data/s3/captages.parquet (53 775 lignes / 50 823 t1_code_ins distincts, cf. analyse précédente) avant toute bascule.'
 )
+
+const statsIdentifiants = await q(`
+  WITH par_code AS (
+    SELECT type_code, code, COUNT(*) AS nb_captages FROM identifiants GROUP BY type_code, code
+  )
+  SELECT i.type_code,
+         COUNT(*)                                         AS lignes,
+         COUNT(DISTINCT i.code_installation)              AS captages,
+         COUNT(DISTINCT i.code) FILTER (WHERE p.nb_captages > 1) AS codes_ambigus
+  FROM identifiants i
+  JOIN par_code p USING (type_code, code)
+  GROUP BY i.type_code
+  ORDER BY i.type_code
+`)
+const [{ n: nbPsvHorsRef }] = await q(`
+  SELECT COUNT(*) n FROM psv_raw
+  WHERE norm_ins("INS - Code national") IS NOT NULL
+    AND norm_ins("INS - Code national") NOT IN (SELECT code_installation FROM cap_raw)
+`)
+console.log('\nIdentifiants (codes ambigus : désignent plusieurs captages) :')
+console.table(statsIdentifiants)
+console.log(`  ${nbPsvHorsRef} PSV du référentiel 2024 écartés : leur captage n'est plus dans le référentiel 2026`)

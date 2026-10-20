@@ -2,7 +2,9 @@
 /**
  * Pipeline complet AAC :
  *   1. Télécharge depuis S3 vers data/s3/ les fichiers source absents
- *      (aac_hilbert.parquet y est déjà si geometries a été lancé)
+ *      (aac_hilbert.parquet y est déjà si geometries a été lancé). Lit aussi
+ *      data/captages/captages_prioritaires.parquet, produit en local par
+ *      captages_parquet_generator (generate_prioritaires.js)
  *   2. Génère les fiches AAC (5 phases DuckDB + assemblage JS)
  *   3. Écrit le fichier aac.parquet dans fiches/output/ (copie dans data/s3/).
  *      L'envoi sur S3 se fait à part : npm run upload
@@ -36,6 +38,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 // propre à fiches (cache, fichiers temporaires).
 const S3_DATA = dataPath('s3')
 const WORK = dataPath('aac')
+const CAPTAGES_PRIORITAIRES = dataPath('captages', 'captages_prioritaires.parquet')
 mkdirSync(S3_DATA, { recursive: true })
 mkdirSync(WORK, { recursive: true })
 
@@ -55,6 +58,12 @@ const RPG_REFRESH = process.env.RPG_REFRESH === '1'
 
 if (!S3_BUCKET || !S3_ACCESS || !S3_SECRET) {
   console.error('Variables manquantes : S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY')
+  process.exit(1)
+}
+
+if (!existsSync(CAPTAGES_PRIORITAIRES)) {
+  console.error(`Fichier introuvable : ${CAPTAGES_PRIORITAIRES}`)
+  console.error('Le générer avec captages_parquet_generator : npm run prioritaires')
   process.exit(1)
 }
 
@@ -159,22 +168,6 @@ for (const year of BIO_YEARS) {
   console.log(` ${((Date.now() - t) / 1000).toFixed(1)}s`)
 }
 
-{
-  const name = 'captages_prioritaires_2026.csv'
-  const dest = localPath(name)
-  if (existsSync(dest)) {
-    console.log(`  ✓ ${name} (déjà présent)`)
-  } else {
-    process.stdout.write(`  ↓ ${name}...`)
-    const t = Date.now()
-    await conn.run(
-      `COPY (SELECT * FROM read_csv('${s3src(name)}', header=true))
-       TO '${dest}' (FORMAT CSV, HEADER true)`
-    )
-    console.log(` ${((Date.now() - t) / 1000).toFixed(1)}s`)
-  }
-}
-
 // ─── Constantes RPG ───────────────────────────────────────────────────────────
 
 const GROUPES_CULTURES_EVOLUTION = {
@@ -204,7 +197,7 @@ const GROUPES_CULTURES_EVOLUTION = {
   28: 'Divers',
 }
 
-function buildInstallations(captages, bssPrioritaires) {
+function buildInstallations(captages, insPrioritaires) {
   const groups = new Map()
   for (const r of captages) {
     const ref = r.t1_ins_cap_ref || r.t1_code_ins
@@ -229,8 +222,7 @@ function buildInstallations(captages, bssPrioritaires) {
         ...(ref.t2_code_ppe ? { code_ppe: ref.t2_code_ppe } : {}),
       }
 
-      const allBss = [...membres.values()].map((m) => m.t1_ins_code_bss).filter(Boolean)
-      if (allBss.some((bss) => bssPrioritaires.has(bss))) entry.prioritaire = true
+      if ([...membres.keys()].some((ins) => insPrioritaires.has(ins))) entry.prioritaire = true
 
       const rattaches = [...membres.values()]
         .filter((m) => m.t1_code_ins !== codeRef)
@@ -411,18 +403,18 @@ for (const r of captagesRows) {
 }
 console.log(`  Captages chargés — ${captagesRows.length} lignes (${Date.now() - t}ms)`)
 
+// Captages prioritaires : codes INS auxquels captages_parquet_generator a
+// résolu les ouvrages de l'export des captages prioritaires (par leurs codes
+// INS, PSV ou BSS). Une installation est prioritaire si l'un de ses membres
+// (captage de référence ou rattaché) y figure. Comparer les codes BSS sous
+// forme de texte, comme auparavant, ratait la plupart des captages : les
+// sources mélangent ancien (`06992X0035`) et nouveau (`BSS002HYFB`) format.
 t = Date.now()
-const bssRows = await q(
-  `SELECT CodeBss FROM read_csv('${localPath('captages_prioritaires_2026.csv')}', header=true) WHERE CodeBss IS NOT NULL`
+const insRows = await q(
+  `SELECT DISTINCT code_installation FROM read_parquet('${CAPTAGES_PRIORITAIRES}')`
 )
-const bssPrioritaires = new Set(
-  bssRows.flatMap((r) =>
-    r.CodeBss.split('|')
-      .map((s) => s.trim())
-      .filter(Boolean)
-  )
-)
-console.log(`  ${bssPrioritaires.size} BSS prioritaires chargés (${Date.now() - t}ms)`)
+const insPrioritaires = new Set(insRows.map((r) => r.code_installation))
+console.log(`  ${insPrioritaires.size} captages prioritaires chargés (${Date.now() - t}ms)`)
 
 // Géométries des périmètres de protection en Lambert 93
 // (aac_l93 est déjà créée plus haut, pour le rattachement des captages.)
@@ -612,7 +604,7 @@ for (const [cdaac, aac] of aacMap) {
     (c) => c.t1_ins_etat_lib?.toUpperCase() === 'ACTIF'
   ).length
 
-  const installations = buildInstallations(captages, bssPrioritaires)
+  const installations = buildInstallations(captages, insPrioritaires)
   const estPrioritaire = installations.some((i) => i.prioritaire === true)
 
   const line =

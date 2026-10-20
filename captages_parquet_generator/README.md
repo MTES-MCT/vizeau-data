@@ -1,4 +1,4 @@
-# Génération d'un `captages.parquet` candidat depuis le référentiel CSV
+# Génération d'un `captages.parquet` candidat depuis le référentiel DGS des captages
 
 ## Contexte
 
@@ -9,13 +9,16 @@ documenté dans ce dépôt : c'est un export brut d'une source privée
 (probablement SISE-Eaux/ARS fourni par un partenaire).
 
 Objectif à terme : remplacer cette source privée non documentée par un
-`captages.parquet` regénéré à partir du référentiel CSV national
-`ref_cap_avr25` (public, plus exhaustif — 57 720 captages contre 50 823
-distincts dans le fichier actuel), **sans casser le pipeline existant**. La
+`captages.parquet` regénéré à partir du référentiel national des captages
+publié par la DGS (`DGS_ref_cap_06_05_2026`, plus exhaustif — 58 114 captages
+contre 50 823 distincts dans le fichier actuel), **sans casser le pipeline existant**. La
 bascule se fait par étapes : ce document couvre la première étape, la
 génération d'un fichier candidat à comparer avant toute mise en production.
 
-Le script correspondant est `generate_captages_parquet.js`. Le détail
+Le script correspondant est `generate_captages_parquet.js`. Un second script,
+`generate_prioritaires.js`, rattache les ouvrages de l'export des captages
+prioritaires aux captages du référentiel et liste les lignes de l'export à
+corriger. Le détail
 colonne par colonne du mapping (source → schéma cible, transformations,
 approximations connues) est dans `csv-to-parquet-schema-mapping.md` — ce
 document-ci résume le processus dans son ensemble : entrées, sorties,
@@ -27,7 +30,9 @@ propres `package.json`/`node_modules`, et ses fichiers, rangés dans
 fichier généré ou téléchargé par `generate_aac_fiches_parquet.js`. Seule la
 comparaison avec l'ancien `captages.parquet` (scripts
 `compare_captages.mjs`/`investigate_pp_coverage.mjs`) lit la copie locale du
-bucket, `data/s3/captages.parquet` (cf. plus bas).
+bucket, `data/s3/captages.parquet` (cf. plus bas). En sens inverse,
+`generate_aac_fiches_parquet.js` lit `captages_prioritaires.parquet`, produit
+ici, pour poser le flag `prioritaire` des installations.
 
 ## Installation
 
@@ -38,20 +43,32 @@ npm install
 
 ## Fichiers nécessaires en entrée
 
-Tous locaux, dans `data/captages/`, aucun accès réseau/S3 requis pour ce script :
+Tous locaux, dans `data/captages/` sauf `AAC.gpkg`, aucun accès réseau/S3 requis :
 
 | Fichier                                                              | Rôle                                                                                                   |
 | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `ref_captages_25avril2025/ref_cap_avr25-Tableau 1.csv`                | Référentiel national des captages (SISE-Eaux, avril 2025). Source principale : une ligne par captage. |
-| `ref_captages_25avril2025/ref_mca_avr25-Tableau 1.csv`                | Référentiel des "mélanges de captages" (regroupements). Sert à reconstruire `t1_ins_cap_ref`.          |
+| `DGS_ref_cap_06_05_2026/cap.csv`                                      | Référentiel national des captages (SISE-Eaux et BSS, mai 2026). Source principale : une ligne par captage. Les champs sont décrits dans `metadata.csv`, à côté. |
+| `DGS_ref_cap_06_05_2026/mca.csv`                                      | Référentiel des "mélanges de captages" (regroupements). Sert à reconstruire `t1_ins_cap_ref` et complète les codes BSS des captages membres. |
+| `DGS_ref_cap_23_02_2024/cap.csv`                                      | Référentiel de février 2024 : une ligne par point de surveillance (PSV), principal ou secondaire. Seule source du lien PSV secondaire → captage. |
 | `ppe_hilbert.parquet`                                                 | Géométries des périmètres de protection éloignée (PPE), avec leur `code_pp`.                          |
 | `ppr_hilbert.parquet`                                                 | Géométries des périmètres de protection rapprochée (PPR), avec leur `code_pp`.                        |
 | `ppi_hilbert.parquet`                                                 | Géométries des périmètres de protection immédiate (PPI), avec leur `code_pp`.                          |
+| `20260901-export_source_list_ouvragespourVizeau.csv`                  | Export des captages prioritaires : une ligne par ouvrage de prélèvement (OPR), avec ses codes INS, PSV, BSS et son AAC. Lu par `generate_prioritaires.js`. |
+| `data/aac/AAC.gpkg` (couche `AAC_FRA`)                                | Géométries des AAC, partagées avec `aac/`. Lu par `generate_prioritaires.js` pour vérifier les codes AAC de l'export et mesurer la distance captage → AAC. |
 
 Les 3 fichiers `*_hilbert.parquet` sont utilisés pour reconstruire, par
 intersection spatiale avec le point de chaque captage, les codes de périmètre
-(`t2_code_ppe`/`t2_code_ppr`/`t2_code_ppi`) qu'aucun des deux CSV ne fournit
+(`t2_code_ppe`/`t2_code_ppr`/`t2_code_ppi`) qu'aucun des CSV ne fournit
 directement.
+
+Particularités des CSV, gérées par le script :
+- `DGS_ref_cap_06_05_2026` écrit les coordonnées avec une virgule décimale
+  (`922965,323`) ; le référentiel de 2025 utilisait un point.
+- `DGS_ref_cap_23_02_2024/cap.csv` commence par 10 lignes de description de
+  l'extraction et finit par une ligne de total (`Nombre:`) ; certains champs
+  texte contiennent des `;` entre guillemets.
+- Tous les CSV sont lus en texte (`all_varchar`) pour ne pas laisser DuckDB
+  convertir des codes en nombres.
 
 ⚠️ Ces périmètres de protection proviennent de **sources institutionnelles
 sensibles** et ne sont pas téléchargeables depuis une source publique.
@@ -67,20 +84,45 @@ fichier externe.
 ## Usage
 
 ```bash
-node generate_captages_parquet.js
+npm start              # generate_captages_parquet.js
+npm run prioritaires   # generate_prioritaires.js, à lancer après
 ```
+
+`generate_prioritaires.js` lit `captages_identifiants.parquet` et
+`captages_new.parquet` : il faut relancer `npm start` avant lui quand les
+référentiels changent.
 
 Aucune variable d'environnement requise (contrairement à
 `generate_aac_fiches_parquet.js`, qui a besoin des identifiants S3).
 
-## Artefact produit
+## Artefacts produits
+
+```
+generate_captages_parquet.js
+DGS_ref_cap_06_05_2026/cap.csv ──┬──────────────────────────────────► captages_new.parquet
+DGS_ref_cap_06_05_2026/mca.csv ──┤  (t1_ins_cap_ref)                         ▲
+pp*_hilbert.parquet ─────────────┼──(intersection spatiale) ─────────────────┘
+                                 │
+DGS_ref_cap_23_02_2024/cap.csv ──┴──(normalisation des codes) ──► captages_identifiants.parquet
+
+generate_prioritaires.js
+export OPR (CSV) ─────────┐
+captages_identifiants ────┼──(résolution INS > PSV > BSS) ──► captages_prioritaires.parquet ──► aac/fiches
+                          │                                        │                              (flag prioritaire)
+captages_new (points) ────┤                                        ▼
+data/aac/AAC.gpkg ────────┴──(codes AAC, distance) ───────► anomalies_prioritaires.csv
+```
+
+Les fichiers sont écrits dans `data/captages/` et ne sont pas versionnés.
+
+### `captages_new.parquet`
 
 **`data/captages/captages_new.parquet`** — fichier candidat (non versionné).
 Pour comparer avec l'ancien `captages.parquet` (scripts `compare_captages.mjs`
 et `investigate_pp_coverage.mjs`), utiliser sa copie locale
 `data/s3/captages.parquet`, téléchargée depuis S3 par `aac/fiches`.
 
-### À quoi il sert
+#### À quoi il sert
 
 Ce n'est **pas encore** branché sur `generate_aac_fiches_parquet.js`. C'est une étape
 intermédiaire, destinée à :
@@ -90,7 +132,7 @@ intermédiaire, destinée à :
 2. Comparer son contenu avec `captages.parquet` (nombre de lignes, écarts de
    valeurs) avant toute décision de bascule.
 
-### Ce qu'il contient
+#### Ce qu'il contient
 
 Une ligne par captage (`code_installation` du CSV), avec uniquement les
 colonnes de `captages.parquet` réellement lues par `generate_aac_fiches_parquet.js`
@@ -110,16 +152,20 @@ sont pas reproduites) :
 | `t1_ins_nat_code`     | `type_eau` (CSV)                                                                               |
 | `t1_ins_usage_lib`    | `libel_usage` (CSV)                                                                            |
 | `t1_ins_etat`         | `code_etat` (CSV) — sélectionnée par le pipeline mais non utilisée en aval                     |
-| `t1_ins_cap_ref`      | Reconstruit depuis `ref_mca` (voir ci-dessous), `NULL` si le captage n'est dans aucun mélange |
+| `t1_ins_cap_ref`      | Reconstruit depuis `mca.csv` (voir ci-dessous), `NULL` si le captage n'est dans aucun mélange |
 | `t1_ins_cap_ref_lib`  | Idem, nom de l'installation de référence du groupe                                            |
 | `t1_ins_code_bss`     | `indice_bss_sise` (CSV)                                                                        |
 | `t2_code_ppe`         | Reconstruit par intersection spatiale avec `ppe_hilbert.parquet`                              |
 | `t2_code_ppr`         | Reconstruit par intersection spatiale avec `ppr_hilbert.parquet`                               |
 | `t2_code_ppi`         | Reconstruit par intersection spatiale avec `ppi_hilbert.parquet`                               |
-| `t1_psv_x`            | `x_l93_installation` (CSV), converti en `DOUBLE`                                              |
-| `t1_psv_y`            | `y_l93_installation` (CSV), converti en `DOUBLE`                                              |
+| `t1_psv_x`            | `x_l93_installation` (CSV), virgule décimale remplacée, converti en `DOUBLE`                 |
+| `t1_psv_y`            | `y_l93_installation` (CSV), virgule décimale remplacée, converti en `DOUBLE`                 |
 
-**Reconstruction de `t1_ins_cap_ref`** : `ref_mca` regroupe des captages
+Les ~2 700 captages au statut « gelé » (`statut_captage = 'G'` : absents de la
+dernière extraction SISE-Eaux transmise au BRGM) sont gardés, bien que
+presque tous leurs champs soient vides.
+
+**Reconstruction de `t1_ins_cap_ref`** : `mca.csv` regroupe des captages
 "mélangés" sous un même `code_mca_national`. On prend, par groupe, le plus
 petit `code_captage_principal_sise` comme référence — un choix arbitraire
 mais déterministe, faute de documentation précise sur la sémantique exacte de
@@ -134,16 +180,180 @@ captage → périmètre. On le reconstruit en projetant le point du captage
 de zones (rare), un seul code est retenu par captage (le plus petit,
 arbitrairement).
 
-### Résultats observés (dernière exécution)
+#### Résultats observés (dernière exécution)
 
-- 57 720 lignes / 57 720 `t1_code_ins` distincts (aucun doublon).
-- 13 020 captages rattachés à un groupe via `ref_mca`.
-- 7 252 captages rattachés à un PPE, 28 395 à un PPR, 22 216 à un PPI.
+- 58 114 lignes / 58 114 `t1_code_ins` distincts (aucun doublon).
+- 13 083 captages rattachés à un groupe via `mca.csv`.
+- 7 281 captages rattachés à un PPE, 28 832 à un PPR, 22 767 à un PPI.
 
 À comparer avec `data/s3/captages.parquet` : 53 775 lignes / 50 823
 `t1_code_ins` distincts.
 
+Par rapport au référentiel d'avril 2025, celui de mai 2026 contient les
+57 720 mêmes captages plus 394 nouveaux. Sur les captages communs, les écarts
+(coordonnées, état, nom, code BSS) viennent tous de mises à jour du
+référentiel, pas de la lecture du fichier.
+
+### `captages_identifiants.parquet`
+
+Table de correspondance des identifiants de captage. Selon les sources, un
+même captage est désigné par son code installation SISE-Eaux (INS), par le
+code d'un de ses points de surveillance (PSV) ou par un code BSS, dans
+l'ancien format (indice, `06992X0035`) ou le nouveau (`BSS001SEGK`). Ce
+fichier donne tous les codes connus de chaque captage du référentiel 2026,
+une ligne par code, pour retrouver le captage à partir de n'importe lequel
+d'entre eux, et convertir un ancien code BSS en nouveau (et inversement).
+
+| Colonne             | Contenu                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `code_installation` | Code INS du captage (`t1_code_ins` de `captages_new.parquet`)                                    |
+| `type_code`         | `INS`, `PSV`, `BSS_INDICE` (ancien code BSS, sans la désignation) ou `BSS_ID` (nouveau code BSS) |
+| `code`              | Le code, normalisé (voir ci-dessous)                                                            |
+| `complement`        | PSV : catégorie `P` (principal) ou `S` (secondaire). BSS : désignation (`P1`, `F`…), celle du BRGM en priorité |
+| `sources`           | Liste des sources où le code a été trouvé (voir ci-dessous)                                     |
+
+Exemple pour le captage `001000106` :
+
+| `type_code`  | `code`          | `complement` | `sources`                                     |
+| ------------ | --------------- | ------------ | --------------------------------------------- |
+| `BSS_ID`     | `BSS001SEGK`    |              | `cap_2026_brgm`                               |
+| `BSS_INDICE` | `06775X0018`    | `HY`         | `cap_2024`, `cap_2026_brgm`, `cap_2026_sise`  |
+| `INS`        | `001000106`     |              | `cap_2026`                                    |
+| `PSV`        | `0010000000108` | `P`          | `cap_2024`, `cap_2026`                        |
+| `PSV`        | `0010000000235` | `S`          | `cap_2024`                                    |
+
+Valeurs de `sources` :
+
+| Valeur          | Fichier et champs                                                                              |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `cap_2026`      | `DGS_ref_cap_06_05_2026/cap.csv` : `code_installation`, `psv_code` (PSV principal seulement)  |
+| `cap_2026_brgm` | `DGS_ref_cap_06_05_2026/cap.csv` : `code_bss_en_bss`, `bss_id_en_bss`, codes BSS saisis par le BRGM, sur lesquels les analyses sont bancarisées dans ADES |
+| `cap_2026_sise` | `DGS_ref_cap_06_05_2026/cap.csv` : `indice_bss_sise`, code BSS saisi par l'ARS dans SISE-Eaux |
+| `cap_2024`      | `DGS_ref_cap_23_02_2024/cap.csv` : PSV principaux et secondaires, code BSS saisi dans SISE-Eaux |
+| `mca_2026`      | `DGS_ref_cap_06_05_2026/mca.csv` : codes BSS des captages membres d'un mélange                |
+
+**Normalisation des codes.** Les fichiers passés par un tableur perdent les
+zéros initiaux. `normalisation.js` définit des macros DuckDB (`norm_ins`, `norm_psv`,
+`norm_bss_indice`, `norm_bss_id`) qui remettent chaque code dans son format de
+référence. Elles servent aussi à `generate_prioritaires.js` pour les codes de
+l'export des captages prioritaires :
+
+| Macro             | Exemples                                                                     |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `norm_ins`        | `57002293` → `057002293`, `1000008` → `001000008`, `Sise021000257` → `021000257`, `2A004625` → `02A004625` |
+| `norm_psv`        | `570000002805` → `0570000002805`, `2A0000000001` → `02A0000000001`            |
+| `norm_bss_indice` | `06992X0035/P1` → `06992X0035`, `6952X0015` → `06952X0015`                    |
+| `norm_bss_id`     | `bss002hyfb` → `BSS002HYFB`, `BSS002PRUZ/F1` → `BSS002PRUZ`                   |
+
+Une valeur non reconnaissable donne `NULL` et n'est pas reprise dans la table.
+Cela concerne des saisies fantaisistes côté ARS (`XXX`, `789-6-`) et des
+indices bouche-trou partagés par des dizaines de captages (`9999X9999`,
+`00000XCODE`, `00000X0000`).
+
+**Choix de construction.**
+- Le référentiel 2026 ne donne que le PSV principal de chaque captage ; celui
+  de 2024 a une ligne par PSV, ce qui ajoute 4 656 PSV secondaires.
+- Seuls les captages présents dans le référentiel 2026 sont gardés, pour que
+  tout code résolu mène à une ligne de `captages_new.parquet` (2 PSV de 2024
+  sont écartés pour cette raison).
+- Un même code peut désigner plusieurs captages. La table garde toutes les
+  correspondances et le résumé du script compte ces codes ambigus. Ils
+  viennent presque tous des codes BSS saisis côté ARS : seuls 4 anciens et
+  4 nouveaux codes BSS du BRGM sont partagés.
+
+**Résultats observés (dernière exécution).**
+
+| `type_code`  | Lignes | Captages | Codes ambigus |
+| ------------ | ------ | -------- | ------------- |
+| `BSS_ID`     | 50 524 | 50 149   | 204           |
+| `BSS_INDICE` | 49 248 | 48 070   | 799           |
+| `INS`        | 58 114 | 58 114   | 0             |
+| `PSV`        | 60 229 | 55 559   | 0             |
+
+Testée sur l'export des captages prioritaires
+(`20260901-export_source_list_ouvragespourVizeau.csv`), la table retrouve,
+après normalisation, 100 % des codes INS, 1 276 des 1 279 codes PSV et
+1 496 des 1 541 codes BSS. 1 333 des 1 539 OPR peuvent ainsi être rattachés
+à au moins un captage, contre 1 210 avec les seuls codes INS.
+
+### `captages_prioritaires.parquet`
+
+Produit par `generate_prioritaires.js`. Une ligne par couple (OPR de l'export
+des captages prioritaires, captage du référentiel). Seuls les OPR rattachés à
+au moins un captage y figurent.
+
+| Colonne             | Contenu                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `code_opr`          | Code de l'ouvrage de prélèvement                                                                |
+| `statut_opr`        | `seul`, `porteur` ou `rattaché`                                                                 |
+| `opr_rattach`       | Pour un rattaché, code OPR de son porteur                                                       |
+| `code_aac`          | AAC de l'OPR, ou celle de son porteur pour un rattaché (tel quel, même absent d'`AAC.gpkg`)     |
+| `code_aac_source`   | `export` (porté par la ligne de l'OPR) ou `porteur` (hérité)                                    |
+| `code_installation` | Code INS du captage (`t1_code_ins`)                                                             |
+| `resolu_par`        | Types de code de l'OPR qui ont mené à ce captage (`INS`, `PSV`, `BSS_INDICE`, `BSS_ID`)         |
+
+**Règle de résolution.**
+- `code_ins`, `code_psv` et `code_bss` sont des listes séparées par `|`, de
+  longueurs parfois différentes : elles sont traitées comme des ensembles de
+  codes, normalisés puis cherchés dans `captages_identifiants.parquet`.
+- Un OPR est rattaché aux captages trouvés par le type de code le plus sûr qui
+  en trouve au moins un : INS, sinon PSV, sinon BSS (ancien ou nouveau). Un
+  code moins sûr qui désigne un autre captage n'ajoute pas de lien, il est
+  signalé dans le rapport d'anomalies.
+- Un code BSS partagé par plusieurs captages l'est presque toujours à cause
+  d'une saisie côté ARS (captage recodé, voisin ou abandonné qui garde le
+  code). Si l'un d'eux porte le code dans les champs du BRGM (source
+  `cap_2026_brgm`), seul celui-là est retenu. Sur toute la table, cela fait
+  passer les codes BSS ambigus de 1 003 à 49 ; sur l'export, les 8 cas
+  ambigus sont tous levés : sur les 7 codes concernés, le captage retenu
+  porte le nom de l'OPR dans 4 cas, un nom proche dans 2 (même lieu-dit), et
+  ne permet pas de trancher dans 1 (`F0 EMMERIN`, abandonné). Un code encore
+  ambigu rattache tous ses captages, et est signalé.
+- La désignation de l'ancien code BSS (`06992X0035/P1`) ne départage pas :
+  l'export ne la donne pour aucun code (ni l'ancienne liste
+  `captages_prioritaires_2026.csv`), et les 4 indices partagés côté BRGM le
+  restent avec leur désignation. La recherche se fait donc sur l'indice seul.
+- Un OPR rattaché hérite de l'AAC de son porteur (`opr_rattach`), seuls les
+  OPR seuls ou porteurs ayant un `code_aac` dans l'export (hypothèse de la
+  question 3 de `plan-captages.md`).
+
+`aac/fiches` lit ce fichier pour poser le flag `prioritaire` : une
+installation est prioritaire si l'un de ses captages (référence ou rattaché)
+y figure. La comparaison se faisait auparavant sur le texte des codes BSS, qui
+mélangent ancien et nouveau format selon les sources.
+
+**Résultats observés (dernière exécution).** 1 494 liens : 1 333 OPR sur
+1 539 rattachés à 1 464 captages (1 210 OPR par leurs codes INS, 123 par leurs
+seuls codes BSS ; aucun par les seuls codes PSV). Dans `aac.parquet`
+régénéré le 20 octobre 2026 (toujours avec l'ancien `captages.parquet`),
+1 401 installations sur 7 378 sont flaguées prioritaires, dans 898 AAC,
+contre 89 installations et 66 AAC avec l'ancienne comparaison des codes BSS.
+
+### `anomalies_prioritaires.csv`
+
+Produit par `generate_prioritaires.js`. Lignes de l'export des captages
+prioritaires non résolues ou incohérentes, à renvoyer au producteur de
+l'export. Une ligne par anomalie, avec les colonnes `anomalie`, `code_opr`,
+`statut_opr`, `opr_rattach`, `nom_sandre`, `code_aac` (hérité du porteur le
+cas échéant), `code_installation`, `distance_m` et `detail`.
+
+| `anomalie`            | Signification                                                                                                  | Lignes |
+| --------------------- | -------------------------------------------------------------------------------------------------------------- | ------ |
+| `aac_inconnue`        | `code_aac` absent d'`AAC.gpkg` (code d'une autre nomenclature, code BSS ou OPR saisi à la place). Signalé sur l'OPR qui le porte, pas sur ses rattachés | 22 |
+| `porteur_absent`      | OPR rattaché dont le porteur n'est pas dans l'export                                                           | 1      |
+| `opr_sans_captage`    | Aucun code de l'OPR ne mène à un captage du référentiel : code PTP seul, coordonnées seules, ou codes INS/PSV/BSS inconnus. `detail` liste les codes présents | 206 |
+| `captage_eloigne_aac` | Captage à plus de 10 km (`DISTANCE_MAX_AAC_M`) de l'AAC de son OPR, mesuré depuis son point dans `captages_new.parquet` | 8 |
+| `code_autre_captage`  | Code PSV ou BSS de l'OPR qui désigne un captage autre que ceux retenus pour l'OPR                              | 21     |
+| `code_ambigu`         | Code PSV ou BSS retenu pour l'OPR qui désigne plusieurs captages, même après la préférence BRGM, tous rattachés | 0      |
+
+Les 21 codes AAC inconnus comprennent des codes numériques absents de la
+couche SANDRE (`55005`, `417`…) et des valeurs qui ne sont pas des codes AAC
+(`FRH_AAC ONS EN BRAY 1`, `00883X0044`, `OPR0000082770`).
+
 ## Comparaison champ par champ avec `captages.parquet`
+
+⚠️ Comparaison établie avec le référentiel d'avril 2025 (57 720 captages), à
+refaire avec celui de mai 2026.
 
 Script : `compare_captages.mjs` (dédup identique à celle de
 `generate_aac_fiches_parquet.js` des deux côtés, jointure sur `t1_code_ins`).

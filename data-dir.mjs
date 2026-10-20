@@ -7,8 +7,9 @@
  *              ou produits par les scripts aac puis envoyés par `aac/upload.js`
  *   aac/       sources propres aux outils AAC (AAC.gpkg, sage_shape.zip), cache et fichiers temporaires de fiches
  *   analyses/  dossier de travail de analyses_parquet_generator (sources, référentiels, sorties)
- *   captages/  entrées et sortie de captages_parquet_generator ; ppr/ppe_hilbert.parquet
- *              (périmètres de protection, sensibles) sont aussi lus par aac/zonage
+ *   captages/  entrées et sorties de captages_parquet_generator ; ppr/ppe_hilbert.parquet
+ *              (périmètres de protection, sensibles) sont aussi lus par aac/zonage,
+ *              captages_prioritaires.parquet par aac/fiches
  */
 
 import { dirname, join, resolve } from "path";

@@ -21,6 +21,7 @@ Chaque fiche AAC contient : nom, code, surface, emprise (bbox), communes recouve
 
 - Node.js ≥ 22
 - Accès S3 (Scaleway par défaut, configurable)
+- `data/captages/captages_prioritaires.parquet`, produit en local par [`captages_parquet_generator`](../../captages_parquet_generator/README.md#captages_prioritairesparquet) (`npm start` puis `npm run prioritaires`) : il donne les captages prioritaires
 
 ## Installation
 
@@ -66,7 +67,6 @@ Pour publier `output/aac.parquet` sur S3 : `npm run upload -- fiches` depuis `aa
 | `aac_pp_zones.parquet`           | Zones de protection (PPE, PPR, PPI)                              |
 | `communes_hilbert.parquet`       | Géométries des communes                                          |
 | `captages.parquet`               | Installations de captage                                         |
-| `captages_prioritaires_2026.csv` | Référentiel des captages prioritaires (BSS)                      |
 | `rpg_bio_YYYY.parquet`           | Parcelles RPG bio annuelles (dans `S3_BIO_DIR`)                  |
 | `rpg_parcelles.parquet`          | Parcelles RPG toutes cultures                                    |
 | `RPG_YYYY.parquet`               | RPG annuel utilisé pour `cultures_evolution` (dans `S3_RPG_DIR`) |
@@ -79,7 +79,7 @@ Ces fichiers ne sont pas publiés tels quels par l'administration : ils sont pro
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `aac_hilbert.parquet`            | [Aires d'Alimentation de Captages – France entière](https://www.sandre.eaufrance.fr/atlas/srv/fre/catalog.search#/metadata/f6a60c29-77dc-4bc1-a8d2-bf0572bf58ab) (SANDRE, couche WFS `sa:AAC_FRA`). Télécharger "AAC.gpkg" (service WFS `https://sandre.eaufrance.fr/aac/mapserver/aac`, `OUTPUTFORMAT=GPKG`), puis convertir en parquet via `../geometries` (tri Hilbert inclus).                                                                                                                                 |
 | `communes_hilbert.parquet`       | Contours communaux [IGN ADMIN EXPRESS COG (simplifié)](https://www.data.gouv.fr/datasets/admin-express-cog-simplifiee-metropole-drom-saint-martin-saint-barthelemy) (data.gouv.fr), champs `code`/`nom`/`geom`, convertis en Parquet et réindexés en Hilbert.                                                                                                                                                                                                                                                                            |
-| `captages_prioritaires_2026.csv` | Export du référentiel national des captages prioritaires ("Grenelle") du portail [aires-captages.fr](https://aires-captages.fr) (OFB/Ministère), qui agrège les listes par agence de l'eau (ex. AEAG pour Adour-Garonne, cf. [SDAGE 2022-2027 — Captages prioritaires](https://www.data.gouv.fr/datasets/aeag-sdage-2022-2027-captages-prioritaires) sur data.gouv.fr pour l'équivalent en accès ouvert bassin par bassin). L'export national complet passe généralement par une demande d'accès au portail plutôt que par data.gouv.fr. |
+| `20260901-export_source_list_ouvragespourVizeau.csv` (lu par `captages_parquet_generator`) | Export du référentiel national des captages prioritaires ("Grenelle") du portail [aires-captages.fr](https://aires-captages.fr) (OFB/Ministère), qui agrège les listes par agence de l'eau (ex. AEAG pour Adour-Garonne, cf. [SDAGE 2022-2027 — Captages prioritaires](https://www.data.gouv.fr/datasets/aeag-sdage-2022-2027-captages-prioritaires) sur data.gouv.fr pour l'équivalent en accès ouvert bassin par bassin). L'export national complet passe généralement par une demande d'accès au portail plutôt que par data.gouv.fr. |
 
 > ⚠️ Les captages et leurs périmètres de protection sont considérés comme des données sensibles en France (risque de malveillance sur l'AEP) : l'accès national homogène n'est pas toujours en open data direct et passe parfois par des portails régionaux (DREAL/ARS/bassins) ou des conventions avec le BRGM/l'OFB. Le RPG est en open data complet mais distribué par année et par région/département sous forme de shapefiles zippés, à pré-traiter pour obtenir le format Parquet attendu ici.
 
@@ -116,5 +116,5 @@ Fichier `aac.parquet` écrit dans `output/` (ZSTD), contenant une ligne par AAC,
 - `surface_agricole_utile` — SAU par groupe de culture (nb parcelles, surface, % SAU)
 - `surface_agricole_ppe` / `surface_agricole_ppr` — idem dans les zones de protection
 - `surface_agricole_bio` — nb parcelles, surface et part bio
-- `installations` — captage de référence (dont le code PPE de sa zone de protection), captages rattachés, statut prioritaire. Les codes PPR et PPI servent à rattacher les captages aux AAC mais ne sont pas écrits dans la sortie
+- `installations` — captage de référence (dont le code PPE de sa zone de protection), captages rattachés, statut prioritaire (`prioritaire` : l'un des captages de l'installation figure dans `data/captages/captages_prioritaires.parquet`). Les codes PPR et PPI servent à rattacher les captages aux AAC mais ne sont pas écrits dans la sortie
 - `cultures_evolution` — objet `{ repartition }`, où `repartition` contient les années `2020..2024` et, pour chaque groupe, `{ surface_ha, nb_parcelles }`
