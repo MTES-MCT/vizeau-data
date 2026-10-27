@@ -54,13 +54,23 @@ Tous locaux, dans `data/captages/` sauf `AAC.gpkg`, aucun accès réseau/S3 requ
 | `ppe_hilbert.parquet`                                                 | Géométries des périmètres de protection éloignée (PPE), avec leur `code_pp`.                          |
 | `ppr_hilbert.parquet`                                                 | Géométries des périmètres de protection rapprochée (PPR), avec leur `code_pp`.                        |
 | `ppi_hilbert.parquet`                                                 | Géométries des périmètres de protection immédiate (PPI), avec leur `code_pp`.                          |
-| `20260901-export_source_list_ouvragespourVizeau.csv`                  | Export des captages prioritaires : une ligne par ouvrage de prélèvement (OPR), avec ses codes INS, PSV, BSS et son AAC. Lu par `generate_prioritaires.js`. |
+| `20260901-export_source_list_ouvragespourVizeau.csv`                  | Export des captages prioritaires : une ligne par ouvrage de prélèvement (OPR), avec ses codes INS, PSV, BSS, PTP et son AAC. Lu par `generate_prioritaires.js`. |
+| `sandre_prl/PointPrelevement.csv`                                     | Couche WFS des points de prélèvement (PTP) du Sandre, en CSV : code BSS (`CdNationalPTE`) de chaque PTP et OPR auxquels il est connecté. Lu par `generate_prioritaires.js`. À télécharger, voir ci-dessous. |
 | `data/aac/AAC.gpkg` (couche `AAC_FRA`)                                | Géométries des AAC, partagées avec `aac/`. Lu par `generate_prioritaires.js` pour vérifier les codes AAC de l'export et mesurer la distance captage → AAC. |
 
 Les 3 fichiers `*_hilbert.parquet` sont utilisés pour reconstruire, par
 intersection spatiale avec le point de chaque captage, les codes de périmètre
 (`t2_code_ppe`/`t2_code_ppr`/`t2_code_ppi`) qu'aucun des CSV ne fournit
 directement.
+
+La couche des PTP se télécharge depuis le WFS du Sandre (environ 35 Mo,
+187 000 lignes en octobre 2026) :
+
+```bash
+mkdir -p data/captages/sandre_prl
+curl -o data/captages/sandre_prl/PointPrelevement.csv \
+  'https://services.sandre.eaufrance.fr/geo/prl?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=sa:PointPrelevement&OUTPUTFORMAT=text/csv'
+```
 
 Particularités des CSV, gérées par le script :
 - `DGS_ref_cap_06_05_2026` écrit les coordonnées avec une virgule décimale
@@ -108,10 +118,11 @@ DGS_ref_cap_23_02_2024/cap.csv ──┴──(normalisation des codes) ──�
 
 generate_prioritaires.js
 export OPR (CSV) ─────────┐
-captages_identifiants ────┼──(résolution INS > PSV > BSS) ──► captages_prioritaires.parquet ──► aac/fiches
-                          │                                        │                              (flag prioritaire)
-captages_new (points) ────┤                                        ▼
-data/aac/AAC.gpkg ────────┴──(codes AAC, distance) ───────► anomalies_prioritaires.csv
+sandre_prl (PTP → BSS) ───┤
+captages_identifiants ────┼──(résolution INS > PSV > BSS des PTP > BSS de l'OPR) ──► captages_prioritaires.parquet ──► aac/fiches
+                          │                                                              │                     (flag prioritaire)
+captages_new (points) ────┤                                                              ▼
+data/aac/AAC.gpkg ────────┴──(codes AAC, distance) ─────────────────────────────► anomalies_prioritaires.csv
 ```
 
 Les fichiers sont écrits dans `data/captages/` et ne sont pas versionnés.
@@ -328,16 +339,20 @@ au moins un captage y figurent.
 | `code_aac`          | AAC de l'OPR, ou celle de son porteur pour un rattaché (tel quel, même absent d'`AAC.gpkg`)     |
 | `code_aac_source`   | `export` (porté par la ligne de l'OPR) ou `porteur` (hérité)                                    |
 | `code_installation` | Code INS du captage (`t1_code_ins`)                                                             |
-| `resolu_par`        | Types de code de l'OPR qui ont mené à ce captage (`INS`, `PSV`, `BSS_INDICE`, `BSS_ID`)         |
+| `resolu_par`        | Types de code de l'OPR qui ont mené à ce captage (`INS`, `PSV`, `PTP_BSS_ID`, `PTP_BSS_INDICE` pour les codes BSS de ses PTP, `BSS_ID`, `BSS_INDICE` pour ceux de l'OPR) |
 
 **Règle de résolution.**
-- `code_ins`, `code_psv` et `code_bss` sont des listes séparées par `|`, de
-  longueurs parfois différentes : elles sont traitées comme des ensembles de
-  codes, normalisés puis cherchés dans `captages_identifiants.parquet`.
+- `code_ins`, `code_psv`, `code_bss` et `code_ptp_sandre` sont des listes
+  séparées par `|`, de longueurs parfois différentes : elles sont traitées
+  comme des ensembles de codes, normalisés puis cherchés dans
+  `captages_identifiants.parquet`. Un PTP y est cherché par le code BSS que
+  lui donne la couche Sandre (`CdNationalPTE`).
 - Un OPR est rattaché aux captages trouvés par le type de code le plus sûr qui
-  en trouve au moins un : INS, sinon PSV, sinon BSS (ancien ou nouveau). Un
-  code moins sûr qui désigne un autre captage n'ajoute pas de lien, il est
-  signalé dans le rapport d'anomalies.
+  en trouve au moins un : INS, sinon PSV, sinon BSS de ses PTP, sinon BSS de
+  l'OPR dans l'export (ancien ou nouveau). Les codes PTP, plus récents que
+  les codes OPR, passent avant eux ; les codes BSS de l'OPR ne servent qu'en
+  secours. Un code moins sûr qui désigne un autre captage n'ajoute pas de
+  lien, il est signalé dans le rapport d'anomalies.
 - Un code BSS partagé par plusieurs captages l'est presque toujours à cause
   d'une saisie côté ARS (captage recodé, voisin ou abandonné qui garde le
   code). Si l'un d'eux porte le code dans les champs du BRGM (source
@@ -360,9 +375,15 @@ installation est prioritaire si l'un de ses captages (référence ou rattaché)
 y figure. La comparaison se faisait auparavant sur le texte des codes BSS, qui
 mélangent ancien et nouveau format selon les sources.
 
-**Résultats observés (dernière exécution).** 1 494 liens : 1 333 OPR sur
-1 539 rattachés à 1 464 captages (1 210 OPR par leurs codes INS, 123 par leurs
-seuls codes BSS ; aucun par les seuls codes PSV). Dans `aac.parquet`
+**Résultats observés (dernière exécution).** 1 496 liens : 1 335 OPR sur
+1 539 rattachés à 1 466 captages (1 210 OPR par leurs codes INS, 79 par les
+codes BSS de leurs PTP, 46 par les seuls codes BSS de l'OPR ; aucun par les
+seuls codes PSV). Sur les 1 589 PTP de l'export, 1 540 sont dans la couche
+Sandre et 1 380 y ont un code BSS. Les codes BSS des PTP et ceux de l'OPR sont
+identiques pour 1 233 OPR, qui les ont tous les deux : passer par les PTP
+retrouve les mêmes captages et n'ajoute que 2 OPR (un qui n'a que des codes
+PTP, un dont le code BSS de l'export, `29445`, est invalide), sans retirer ni
+modifier de lien. Dans `aac.parquet`
 régénéré le 20 octobre 2026 (toujours avec l'ancien `captages.parquet`),
 1 401 installations sur 7 378 sont flaguées prioritaires, dans 898 AAC,
 contre 89 installations et 66 AAC avec l'ancienne comparaison des codes BSS.
@@ -379,10 +400,12 @@ cas échéant), `code_installation`, `distance_m` et `detail`.
 | --------------------- | -------------------------------------------------------------------------------------------------------------- | ------ |
 | `aac_inconnue`        | `code_aac` absent d'`AAC.gpkg` (code d'une autre nomenclature, code BSS ou OPR saisi à la place). Signalé sur l'OPR qui le porte, pas sur ses rattachés | 22 |
 | `porteur_absent`      | OPR rattaché dont le porteur n'est pas dans l'export                                                           | 1      |
-| `opr_sans_captage`    | Aucun code de l'OPR ne mène à un captage du référentiel : code PTP seul, coordonnées seules, ou codes INS/PSV/BSS inconnus. `detail` liste les codes présents | 206 |
+| `opr_sans_captage`    | Aucun code de l'OPR ne mène à un captage du référentiel : PTP sans code BSS dans la couche Sandre, coordonnées seules, ou codes INS/PSV/BSS inconnus. `detail` liste les codes présents | 204 |
 | `captage_eloigne_aac` | Captage à plus de 10 km (`DISTANCE_MAX_AAC_M`) de l'AAC de son OPR, mesuré depuis son point dans `captages_new.parquet` | 8 |
-| `code_autre_captage`  | Code PSV ou BSS de l'OPR qui désigne un captage autre que ceux retenus pour l'OPR                              | 21     |
+| `code_autre_captage`  | Code PSV ou BSS de l'OPR ou de ses PTP qui désigne un captage autre que ceux retenus pour l'OPR. Un code BSS donné à la fois par un PTP et par l'OPR n'est signalé qu'une fois | 21 |
 | `code_ambigu`         | Code PSV ou BSS retenu pour l'OPR qui désigne plusieurs captages, même après la préférence BRGM, tous rattachés | 0      |
+| `ptp_inconnu`         | PTP de l'OPR absent de la couche Sandre des points de prélèvement                                              | 49     |
+| `ptp_autre_opr`       | PTP de l'OPR que la couche Sandre connecte à d'autres OPR seulement                                            | 0      |
 
 Les 21 codes AAC inconnus comprennent des codes numériques absents de la
 couche SANDRE (`55005`, `417`…) et des valeurs qui ne sont pas des codes AAC

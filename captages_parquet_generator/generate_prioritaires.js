@@ -12,6 +12,8 @@
  *
  * Sources :
  *   - data/captages/20260901-export_source_list_ouvragespourVizeau.csv
+ *   - data/captages/sandre_prl/PointPrelevement.csv  couche WFS des points de
+ *     prélèvement (PTP) du Sandre, pour leurs codes BSS (cf. PTP_URL)
  *   - data/captages/captages_identifiants.parquet et captages_new.parquet
  *     (produits par generate_captages_parquet.js, à lancer avant)
  *   - data/aac/AAC.gpkg (couche AAC_FRA), pour vérifier les codes AAC et
@@ -28,6 +30,10 @@ import { NORMALISATION_MACROS } from './normalisation.js'
 const path = (name) => dataPath('captages', name)
 
 const EXPORT_CSV = path('20260901-export_source_list_ouvragespourVizeau.csv')
+const PTP_CSV = path('sandre_prl/PointPrelevement.csv')
+const PTP_URL =
+  'https://services.sandre.eaufrance.fr/geo/prl?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature' +
+  '&TYPENAMES=sa:PointPrelevement&OUTPUTFORMAT=text/csv'
 const IDENTIFIANTS = path('captages_identifiants.parquet')
 const CAPTAGES = path('captages_new.parquet')
 const AAC_GPKG = dataPath('aac', 'AAC.gpkg')
@@ -38,10 +44,11 @@ const OUTPUT_ANOMALIES = path('anomalies_prioritaires.csv')
 // AAC, le lien donné par l'export est jugé suspect (question 4 de plan-captages.md).
 const DISTANCE_MAX_AAC_M = 10_000
 
-for (const file of [EXPORT_CSV, IDENTIFIANTS, CAPTAGES, AAC_GPKG]) {
+for (const file of [EXPORT_CSV, PTP_CSV, IDENTIFIANTS, CAPTAGES, AAC_GPKG]) {
   if (!existsSync(file)) {
     console.error(`Fichier introuvable : ${file}`)
     if (file === IDENTIFIANTS || file === CAPTAGES) console.error('Lancer d\'abord : node generate_captages_parquet.js')
+    if (file === PTP_CSV) console.error(`Le télécharger : mkdir -p "${dataPath('captages', 'sandre_prl')}" && curl -o "${PTP_CSV}" "${PTP_URL}"`)
     process.exit(1)
   }
 }
@@ -86,31 +93,70 @@ await run(`
 const [{ n: nbOpr }] = await q(`SELECT COUNT(*) n FROM opr`)
 console.log(`  ${nbOpr} OPR chargés depuis l'export (${Date.now() - t}ms)`)
 
+// ─── Points de prélèvement (PTP) du Sandre ────────────────────────────────────
+//
+// `CdNationalPTE` donne le code BSS (presque toujours au nouveau format) du
+// point d'eau d'un PTP. Un PTP peut avoir plusieurs lignes, une par OPR auquel
+// il a été connecté (`DateDebConnOuvPoint`/`DateFinConnOuvPoint`) : elles sont
+// toutes gardées, le code BSS ne dépendant que du PTP.
+
+t = Date.now()
+await run(`
+  CREATE TABLE ptp_sandre AS
+  SELECT DISTINCT CdPointPrelevement AS code_ptp, CdOuvragePrel AS code_opr,
+         NULLIF(trim(CdNationalPTE), '') AS code_pte
+  FROM read_csv('${PTP_CSV}', header=true, all_varchar=true)
+`)
+await run(`
+  CREATE TABLE ptp_opr AS
+  SELECT DISTINCT o.code_opr, trim(p.code_ptp) AS code_ptp
+  FROM opr o, unnest(string_split(o.code_ptp_sandre, '|')) AS p(code_ptp)
+  WHERE trim(p.code_ptp) <> ''
+`)
+const [ptpStats] = await q(`
+  SELECT COUNT(DISTINCT p.code_ptp) AS ptp,
+         COUNT(DISTINCT p.code_ptp) FILTER (WHERE s.code_ptp IS NOT NULL) AS trouves,
+         COUNT(DISTINCT p.code_ptp) FILTER (WHERE s.code_pte IS NOT NULL) AS avec_bss
+  FROM ptp_opr p
+  LEFT JOIN ptp_sandre s USING (code_ptp)
+`)
+console.log(
+  `  ${ptpStats.ptp} PTP dans l'export, ${ptpStats.trouves} trouvés dans la couche Sandre, ` +
+    `${ptpStats.avec_bss} avec un code BSS (${Date.now() - t}ms)`
+)
+
 // ─── Résolution des codes en captages ─────────────────────────────────────────
 //
-// `code_ins`, `code_psv` et `code_bss` sont des listes séparées par `|`, dont
-// les longueurs ne concordent pas toujours : elles sont traitées comme des
-// ensembles de codes par OPR, normalisés puis cherchés dans la table des
-// identifiants.
+// `code_ins`, `code_psv`, `code_bss` et `code_ptp_sandre` sont des listes
+// séparées par `|`, dont les longueurs ne concordent pas toujours : elles sont
+// traitées comme des ensembles de codes par OPR, normalisés puis cherchés dans
+// la table des identifiants. Les PTP y sont cherchés par le code BSS que leur
+// donne la couche Sandre.
 //
 // Un OPR est rattaché aux captages trouvés par le type de code le plus sûr qui
-// en trouve au moins un : INS, sinon PSV, sinon BSS (ancien ou nouveau). Un
-// code d'un type moins sûr qui désigne un autre captage n'ajoute pas de lien :
-// il est signalé dans le rapport d'anomalies. Un code PSV ou BSS qui désigne
-// encore plusieurs captages après la préférence BRGM ci-dessous les rattache
-// tous, et est aussi signalé.
+// en trouve au moins un : INS, sinon PSV, sinon BSS de ses PTP, sinon BSS de
+// l'OPR dans l'export (ancien ou nouveau). Les codes PTP, plus récents, passent
+// avant les codes BSS de l'OPR, gardés en secours. Un code d'un type moins sûr
+// qui désigne un autre captage n'ajoute pas de lien : il est signalé dans le
+// rapport d'anomalies. Un code PSV ou BSS qui désigne encore plusieurs
+// captages après la préférence BRGM ci-dessous les rattache tous, et est
+// aussi signalé.
 
 t = Date.now()
 await run(`
   CREATE TABLE codes_opr AS
   WITH brut AS (
-    SELECT code_opr, 'INS' AS type_brut, trim(unnest(string_split(code_ins, '|'))) AS code_brut FROM opr
+    SELECT code_opr, 'INS' AS type_brut, trim(unnest(string_split(code_ins, '|'))) AS code_brut, NULL AS code_ptp FROM opr
     UNION ALL
-    SELECT code_opr, 'PSV', trim(unnest(string_split(code_psv, '|'))) FROM opr
+    SELECT code_opr, 'PSV', trim(unnest(string_split(code_psv, '|'))), NULL FROM opr
     UNION ALL
-    SELECT code_opr, 'BSS', trim(unnest(string_split(code_bss, '|'))) FROM opr
+    SELECT p.code_opr, 'PTP', s.code_pte, p.code_ptp
+    FROM ptp_opr p
+    JOIN (SELECT DISTINCT code_ptp, code_pte FROM ptp_sandre WHERE code_pte IS NOT NULL) s USING (code_ptp)
+    UNION ALL
+    SELECT code_opr, 'BSS', trim(unnest(string_split(code_bss, '|'))), NULL FROM opr
   )
-  SELECT DISTINCT code_opr, type_brut, code_brut,
+  SELECT DISTINCT code_opr, type_brut, code_brut, code_ptp,
          CASE type_brut
            WHEN 'INS' THEN 'INS'
            WHEN 'PSV' THEN 'PSV'
@@ -121,7 +167,7 @@ await run(`
            WHEN 'PSV' THEN norm_psv(code_brut)
            ELSE COALESCE(norm_bss_id(code_brut), norm_bss_indice(code_brut))
          END AS code,
-         CASE type_brut WHEN 'INS' THEN 1 WHEN 'PSV' THEN 2 ELSE 3 END AS rang
+         CASE type_brut WHEN 'INS' THEN 1 WHEN 'PSV' THEN 2 WHEN 'PTP' THEN 3 ELSE 4 END AS rang
   FROM brut
   WHERE code_brut <> ''
 `)
@@ -133,7 +179,9 @@ await run(`
 // avec elle.
 await run(`
   CREATE TABLE correspondances AS
-  SELECT c.code_opr, c.type_code, c.code_brut, c.rang, i.code_installation
+  SELECT c.code_opr, c.type_code, c.code, c.code_brut, c.code_ptp, c.rang, i.code_installation,
+         CASE WHEN c.code_ptp IS NOT NULL THEN 'PTP_' || c.type_code ELSE c.type_code END AS type_lien,
+         c.type_code || ' ' || c.code_brut || COALESCE(' (PTP ' || c.code_ptp || ')', '') AS libelle
   FROM codes_opr c
   JOIN read_parquet('${IDENTIFIANTS}') i ON i.type_code = c.type_code AND i.code = c.code
   QUALIFY list_contains(i.sources, 'cap_2026_brgm')
@@ -145,7 +193,7 @@ await run(`
     SELECT code_opr, MIN(rang) AS rang FROM correspondances GROUP BY code_opr
   )
   SELECT c.code_opr, c.code_installation, c.rang,
-         list_sort(list_distinct(list(c.type_code))) AS resolu_par
+         list_sort(list_distinct(list(c.type_lien))) AS resolu_par
   FROM correspondances c
   JOIN rang_retenu r ON r.code_opr = c.code_opr AND r.rang = c.rang
   GROUP BY c.code_opr, c.code_installation, c.rang
@@ -175,12 +223,16 @@ console.log(`  Fichier écrit : ${OUTPUT}`)
 //                       pas sur ses rattachés)
 //   porteur_absent      OPR rattaché dont le porteur n'est pas dans l'export
 //   opr_sans_captage    aucun code de l'OPR ne mène à un captage du référentiel
-//                       (PTP seul, coordonnées seules, codes inconnus)
+//                       (PTP sans code BSS, coordonnées seules, codes inconnus)
 //   captage_eloigne_aac captage à plus de DISTANCE_MAX_AAC_M de l'AAC de son OPR
-//   code_autre_captage  code PSV ou BSS de l'OPR qui désigne un captage autre que
-//                       ceux retenus pour l'OPR (cf. résolution ci-dessus)
+//   code_autre_captage  code PSV ou BSS de l'OPR ou de ses PTP qui désigne un
+//                       captage autre que ceux retenus pour l'OPR (cf. résolution
+//                       ci-dessus)
 //   code_ambigu         code PSV ou BSS retenu pour l'OPR qui désigne plusieurs
 //                       captages, tous rattachés à l'OPR
+//   ptp_inconnu         PTP de l'OPR absent de la couche Sandre
+//   ptp_autre_opr       PTP de l'OPR que la couche Sandre connecte à d'autres OPR
+//                       seulement
 
 t = Date.now()
 await run(`
@@ -223,7 +275,7 @@ await run(`
 
   UNION ALL
   SELECT 'code_autre_captage', c.code_opr, c.code_installation, NULL,
-         c.type_code || ' ' || c.code_brut || ' désigne ' || c.code_installation
+         c.libelle || ' désigne ' || c.code_installation
            || ', hors des captages retenus pour l''OPR (' || r.retenus || ')'
   FROM correspondances c
   JOIN (
@@ -233,16 +285,35 @@ await run(`
   WHERE NOT EXISTS (
     SELECT 1 FROM liens l WHERE l.code_opr = c.code_opr AND l.code_installation = c.code_installation
   )
+  -- un code BSS donné à la fois par un PTP et par l'OPR n'est signalé qu'une fois
+  QUALIFY row_number() OVER (
+    PARTITION BY c.code_opr, c.code_installation, c.type_code, c.code ORDER BY c.rang, c.code_ptp
+  ) = 1
 
   UNION ALL
   SELECT 'code_ambigu', c.code_opr, NULL, NULL,
-         c.type_code || ' ' || c.code_brut || ' désigne plusieurs captages, tous retenus ('
+         c.libelle || ' désigne plusieurs captages, tous retenus ('
            || string_agg(DISTINCT c.code_installation, ', ' ORDER BY c.code_installation) || ')'
   FROM correspondances c
   JOIN (SELECT DISTINCT code_opr, rang FROM liens) r USING (code_opr, rang)
   WHERE c.rang > 1
-  GROUP BY c.code_opr, c.type_code, c.code_brut
+  GROUP BY c.code_opr, c.libelle
   HAVING COUNT(DISTINCT c.code_installation) > 1
+
+  UNION ALL
+  SELECT 'ptp_inconnu', p.code_opr, NULL, NULL,
+         'PTP « ' || p.code_ptp || ' » absent de la couche Sandre'
+  FROM ptp_opr p
+  WHERE p.code_ptp NOT IN (SELECT code_ptp FROM ptp_sandre)
+
+  UNION ALL
+  SELECT 'ptp_autre_opr', p.code_opr, NULL, NULL,
+         'PTP « ' || p.code_ptp || ' » connecté dans la couche Sandre à '
+           || string_agg(DISTINCT s.code_opr, ', ' ORDER BY s.code_opr)
+  FROM ptp_opr p
+  JOIN ptp_sandre s USING (code_ptp)
+  GROUP BY p.code_opr, p.code_ptp
+  HAVING NOT bool_or(s.code_opr = p.code_opr)
 `)
 await run(`
   COPY (
