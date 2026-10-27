@@ -22,6 +22,7 @@ Chaque fiche AAC contient : nom, code, surface, emprise (bbox), communes recouve
 - Node.js ≥ 22
 - Accès S3 (Scaleway par défaut, configurable)
 - `data/captages/captages_prioritaires.parquet`, produit en local par [`captages_parquet_generator`](../../captages_parquet_generator/README.md#captages_prioritairesparquet) (`npm start` puis `npm run prioritaires`) : il donne les captages prioritaires
+- `data/captages/captages_new.parquet`, produit en local par [`captages_parquet_generator`](../../captages_parquet_generator/README.md#captages_newparquet) (`npm start`) : seuls ses codes BSS sont lus
 
 ## Installation
 
@@ -116,5 +117,5 @@ Fichier `aac.parquet` écrit dans `output/` (ZSTD), contenant une ligne par AAC,
 - `surface_agricole_utile` — SAU par groupe de culture (nb parcelles, surface, % SAU)
 - `surface_agricole_ppe` / `surface_agricole_ppr` — idem dans les zones de protection
 - `surface_agricole_bio` — nb parcelles, surface et part bio
-- `installations` — captage de référence (dont le code PPE de sa zone de protection), captages rattachés, statut prioritaire (`prioritaire` : l'un des captages de l'installation figure dans `data/captages/captages_prioritaires.parquet`). Les codes PPR et PPI servent à rattacher les captages aux AAC mais ne sont pas écrits dans la sortie
+- `installations` — captage de référence (dont le code PPE de sa zone de protection), captages rattachés, statut prioritaire (`prioritaire` : l'un des captages de l'installation figure dans `data/captages/captages_prioritaires.parquet`), codes BSS de l'installation et des captages rattachés (`code_bss` : ancien code, indice et désignation `06992X0035/P1` ; `code_bss_nouveau` : nouveau code `BSS001SEGK`), repris de `data/captages/captages_new.parquet`. Les codes PPR et PPI servent à rattacher les captages aux AAC mais ne sont pas écrits dans la sortie
 - `cultures_evolution` — objet `{ repartition }`, où `repartition` contient les années `2020..2024` et, pour chaque groupe, `{ surface_ha, nb_parcelles }`

@@ -16,7 +16,7 @@
  *   t1_code_ins, t1_ins_nom, t1_com_nom, t1_com_insee, t1_ins_etat_lib,
  *   t1_uge_mo_nom, t1_dep_geo_lib, t1_cap_type_lib, t1_ins_nat_code,
  *   t1_ins_usage_lib, t1_ins_etat, t1_ins_cap_ref, t1_ins_cap_ref_lib,
- *   t1_ins_code_bss, t2_code_ppe, t2_code_ppr, t2_code_ppi,
+ *   t1_ins_code_bss, t1_ins_code_bss_nouveau, t2_code_ppe, t2_code_ppr, t2_code_ppi,
  *   t1_psv_x, t1_psv_y
  *
  * Sources (dans data/captages/) :
@@ -211,42 +211,6 @@ await buildPpMap('ppe', 't2_code_ppe')
 await buildPpMap('ppr', 't2_code_ppr')
 await buildPpMap('ppi', 't2_code_ppi')
 
-// ─── Assemblage final ─────────────────────────────────────────────────────────
-
-t = Date.now()
-await run(`
-  COPY (
-    SELECT
-      r.code_installation                          AS t1_code_ins,
-      r.nom_installation                            AS t1_ins_nom,
-      COALESCE(NULLIF(r.nom_commune_actuelle, ''), NULLIF(r.nom_commune_dans_sise, '')) AS t1_com_nom,
-      r.code_insee_commune_sise                     AS t1_com_insee,
-      UPPER(r.libel_etat)                           AS t1_ins_etat_lib,
-      NULL::VARCHAR                                 AS t1_uge_mo_nom,
-      d.nom                                         AS t1_dep_geo_lib,
-      UPPER(r.nature_point_eau)                     AS t1_cap_type_lib,
-      r.type_eau                                    AS t1_ins_nat_code,
-      r.libel_usage                                 AS t1_ins_usage_lib,
-      r.code_etat                                   AS t1_ins_etat,
-      cr.t1_ins_cap_ref                             AS t1_ins_cap_ref,
-      cr.t1_ins_cap_ref_lib                         AS t1_ins_cap_ref_lib,
-      NULLIF(r.indice_bss_sise, '')                 AS t1_ins_code_bss,
-      ppe.t2_code_ppe                                AS t2_code_ppe,
-      ppr.t2_code_ppr                                AS t2_code_ppr,
-      ppi.t2_code_ppi                                AS t2_code_ppi,
-      p.x_l93                                       AS t1_psv_x,
-      p.y_l93                                       AS t1_psv_y
-    FROM cap_raw r
-    LEFT JOIN dept_lookup d ON d.code = r.dept_gestionnaire
-    LEFT JOIN cap_ref_map cr ON cr.code_installation = r.code_installation
-    LEFT JOIN cap_points p ON p.code_installation = r.code_installation
-    LEFT JOIN ppe_map ppe ON ppe.code_installation = r.code_installation
-    LEFT JOIN ppr_map ppr ON ppr.code_installation = r.code_installation
-    LEFT JOIN ppi_map ppi ON ppi.code_installation = r.code_installation
-  ) TO '${OUTPUT}' (FORMAT PARQUET)
-`)
-console.log(`\n  Fichier écrit : ${OUTPUT} (${Date.now() - t}ms)`)
-
 // ─── Table de correspondance des identifiants ─────────────────────────────────
 //
 // Selon les sources, un captage (installation SISE-Eaux, code INS) est désigné
@@ -327,6 +291,130 @@ await run(`
 `)
 await run(`COPY identifiants TO '${OUTPUT_IDENTIFIANTS}' (FORMAT PARQUET)`)
 console.log(`  Fichier écrit : ${OUTPUT_IDENTIFIANTS} (${Date.now() - t}ms)`)
+
+// ─── Codes BSS affichés (t1_ins_code_bss, t1_ins_code_bss_nouveau) ───────────
+//
+// Un ouvrage BSS a un ancien code, indice et désignation séparés par un `/`
+// (`06992X0035/P1`), et un nouveau code (`BSS001SEGK`), donné à part. Les
+// ouvrages créés depuis le changement de format n'ont pas d'ancien code : le
+// BRGM écrit alors `BSS002PRUZ/F1`, qui n'est pas repris comme ancien code.
+//
+// Les deux codes sont tirés de la table des identifiants, qui réunit les codes
+// BSS du captage trouvés dans toutes les sources. Il n'existe pas de table de
+// conversion à part : ce sont les captages dont le BRGM donne les deux codes
+// (`code_bss_en_bss`, `bss_id_en_bss`) qui servent de pivot pour passer de
+// l'un à l'autre. Dans le référentiel, un indice n'y désigne qu'un ouvrage et
+// un nouveau code qu'un ancien. Pour chaque captage :
+//   1. ses codes BRGM, s'il en a : les autres sources sont ignorées, elles
+//      désignent parfois un autre ouvrage ;
+//   2. sinon le meilleur ancien code et le meilleur nouveau code parmi ses
+//      autres sources (ARS 2026, puis référentiel 2024, puis mca.csv) ; celui
+//      qui manque est retrouvé par le pivot, et la désignation du BRGM
+//      remplace celle de l'ARS quand l'indice y figure (elle diverge souvent :
+//      `L` pour `P`, `215` pour `SOURCE`).
+// Faute de désignation connue, l'ancien code se réduit à l'indice.
+
+t = Date.now()
+await run(`
+  CREATE TABLE bss_map AS
+  WITH codes AS (
+    SELECT code_installation, type_code, code,
+           CASE WHEN regexp_matches(complement, '^[0-9A-Z]+$') THEN complement END AS designation,
+           CASE WHEN list_contains(sources, 'cap_2026_brgm') THEN 1
+                WHEN list_contains(sources, 'cap_2026_sise') THEN 2
+                WHEN list_contains(sources, 'cap_2024') THEN 3
+                ELSE 4 END AS priorite
+    FROM identifiants
+    WHERE type_code IN ('BSS_INDICE', 'BSS_ID')
+  ),
+  par_captage AS (
+    SELECT code_installation,
+           bool_or(priorite = 1)                                                    AS brgm,
+           arg_min(code, (priorite, code)) FILTER (WHERE type_code = 'BSS_INDICE')        AS indice,
+           arg_min(designation, (priorite, code)) FILTER (WHERE type_code = 'BSS_INDICE') AS designation,
+           arg_min(code, (priorite, code)) FILTER (WHERE type_code = 'BSS_ID')            AS bss_id
+    FROM codes
+    -- Captage qui a des codes BRGM : seuls ceux-ci comptent
+    WHERE priorite = 1 OR code_installation NOT IN (SELECT code_installation FROM codes WHERE priorite = 1)
+    GROUP BY code_installation
+  ),
+  pivots AS (
+    SELECT DISTINCT indice, designation, bss_id FROM par_captage WHERE brgm
+  ),
+  pivot_indice AS (
+    SELECT indice, any_value(designation) AS designation, any_value(bss_id) AS bss_id
+    FROM pivots WHERE indice IS NOT NULL GROUP BY indice HAVING COUNT(*) = 1
+  ),
+  pivot_id AS (
+    SELECT bss_id, any_value(indice) AS indice, any_value(designation) AS designation
+    FROM pivots WHERE bss_id IS NOT NULL GROUP BY bss_id HAVING COUNT(*) = 1
+  ),
+  choix AS (
+    SELECT c.code_installation, c.brgm,
+           COALESCE(c.indice, pid.indice)                                   AS indice,
+           CASE WHEN c.brgm THEN c.designation
+                WHEN c.indice IS NOT NULL THEN COALESCE(pin.designation, c.designation)
+                ELSE pid.designation END                                    AS designation,
+           COALESCE(c.bss_id, pin.bss_id)                                   AS bss_id,
+           (c.indice IS NULL AND pid.indice IS NOT NULL)
+             OR (c.bss_id IS NULL AND pin.bss_id IS NOT NULL)               AS par_pivot
+    FROM par_captage c
+    LEFT JOIN pivot_indice pin ON NOT c.brgm AND pin.indice = c.indice
+    LEFT JOIN pivot_id pid ON NOT c.brgm AND pid.bss_id = c.bss_id
+  )
+  SELECT r.code_installation,
+         ch.indice || COALESCE('/' || ch.designation, '')                   AS code_bss,
+         ch.bss_id                                                          AS code_bss_nouveau,
+         CASE WHEN ch.brgm THEN 'brgm'
+              WHEN ch.par_pivot THEN 'autres_sources_pivot'
+              WHEN ch.code_installation IS NOT NULL THEN 'autres_sources' END AS origine
+  FROM cap_raw r
+  LEFT JOIN choix ch ON ch.code_installation = r.code_installation
+`)
+const statsBss = await q(`
+  SELECT origine, COUNT(*) AS captages, COUNT(code_bss) AS ancien, COUNT(code_bss_nouveau) AS nouveau
+  FROM bss_map GROUP BY origine ORDER BY origine NULLS LAST
+`)
+console.log(`  Codes BSS choisis (${Date.now() - t}ms) :`)
+console.table(statsBss)
+
+// ─── Assemblage final ─────────────────────────────────────────────────────────
+
+t = Date.now()
+await run(`
+  COPY (
+    SELECT
+      r.code_installation                          AS t1_code_ins,
+      r.nom_installation                            AS t1_ins_nom,
+      COALESCE(NULLIF(r.nom_commune_actuelle, ''), NULLIF(r.nom_commune_dans_sise, '')) AS t1_com_nom,
+      r.code_insee_commune_sise                     AS t1_com_insee,
+      UPPER(r.libel_etat)                           AS t1_ins_etat_lib,
+      NULL::VARCHAR                                 AS t1_uge_mo_nom,
+      d.nom                                         AS t1_dep_geo_lib,
+      UPPER(r.nature_point_eau)                     AS t1_cap_type_lib,
+      r.type_eau                                    AS t1_ins_nat_code,
+      r.libel_usage                                 AS t1_ins_usage_lib,
+      r.code_etat                                   AS t1_ins_etat,
+      cr.t1_ins_cap_ref                             AS t1_ins_cap_ref,
+      cr.t1_ins_cap_ref_lib                         AS t1_ins_cap_ref_lib,
+      bss.code_bss                                  AS t1_ins_code_bss,
+      bss.code_bss_nouveau                          AS t1_ins_code_bss_nouveau,
+      ppe.t2_code_ppe                                AS t2_code_ppe,
+      ppr.t2_code_ppr                                AS t2_code_ppr,
+      ppi.t2_code_ppi                                AS t2_code_ppi,
+      p.x_l93                                       AS t1_psv_x,
+      p.y_l93                                       AS t1_psv_y
+    FROM cap_raw r
+    LEFT JOIN dept_lookup d ON d.code = r.dept_gestionnaire
+    LEFT JOIN cap_ref_map cr ON cr.code_installation = r.code_installation
+    LEFT JOIN bss_map bss ON bss.code_installation = r.code_installation
+    LEFT JOIN cap_points p ON p.code_installation = r.code_installation
+    LEFT JOIN ppe_map ppe ON ppe.code_installation = r.code_installation
+    LEFT JOIN ppr_map ppr ON ppr.code_installation = r.code_installation
+    LEFT JOIN ppi_map ppi ON ppi.code_installation = r.code_installation
+  ) TO '${OUTPUT}' (FORMAT PARQUET)
+`)
+console.log(`\n  Fichier écrit : ${OUTPUT} (${Date.now() - t}ms)`)
 
 // ─── Résumé ───────────────────────────────────────────────────────────────────
 

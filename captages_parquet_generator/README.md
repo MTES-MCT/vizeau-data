@@ -32,7 +32,8 @@ comparaison avec l'ancien `captages.parquet` (scripts
 `compare_captages.mjs`/`investigate_pp_coverage.mjs`) lit la copie locale du
 bucket, `data/s3/captages.parquet` (cf. plus bas). En sens inverse,
 `generate_aac_fiches_parquet.js` lit `captages_prioritaires.parquet`, produit
-ici, pour poser le flag `prioritaire` des installations.
+ici, pour poser le flag `prioritaire` des installations, et les codes BSS de
+`captages_new.parquet`.
 
 ## Installation
 
@@ -99,10 +100,10 @@ Aucune variable d'environnement requise (contrairement à
 
 ```
 generate_captages_parquet.js
-DGS_ref_cap_06_05_2026/cap.csv ──┬──────────────────────────────────► captages_new.parquet
-DGS_ref_cap_06_05_2026/mca.csv ──┤  (t1_ins_cap_ref)                         ▲
-pp*_hilbert.parquet ─────────────┼──(intersection spatiale) ─────────────────┘
-                                 │
+DGS_ref_cap_06_05_2026/cap.csv ──┬──────────────────────────────────► captages_new.parquet ──► aac/fiches
+DGS_ref_cap_06_05_2026/mca.csv ──┤  (t1_ins_cap_ref)                         ▲               (codes BSS)
+pp*_hilbert.parquet ─────────────┼──(intersection spatiale) ─────────────────┤
+                                 │                                           │ (codes BSS)
 DGS_ref_cap_23_02_2024/cap.csv ──┴──(normalisation des codes) ──► captages_identifiants.parquet
 
 generate_prioritaires.js
@@ -124,8 +125,9 @@ et `investigate_pp_coverage.mjs`), utiliser sa copie locale
 
 #### À quoi il sert
 
-Ce n'est **pas encore** branché sur `generate_aac_fiches_parquet.js`. C'est une étape
-intermédiaire, destinée à :
+Ce n'est **pas encore** branché sur `generate_aac_fiches_parquet.js`, qui n'y
+lit que les codes BSS (`t1_ins_code_bss`, `t1_ins_code_bss_nouveau`) de ses
+installations. C'est une étape intermédiaire, destinée à :
 1. Vérifier que le schéma produit est compatible avec les requêtes du
    pipeline (validé : la requête de rattachement captage→AAC de
    `generate_aac_fiches_parquet.js` tourne sans erreur dessus, cf. tests manuels).
@@ -154,7 +156,8 @@ sont pas reproduites) :
 | `t1_ins_etat`         | `code_etat` (CSV) — sélectionnée par le pipeline mais non utilisée en aval                     |
 | `t1_ins_cap_ref`      | Reconstruit depuis `mca.csv` (voir ci-dessous), `NULL` si le captage n'est dans aucun mélange |
 | `t1_ins_cap_ref_lib`  | Idem, nom de l'installation de référence du groupe                                            |
-| `t1_ins_code_bss`     | `indice_bss_sise` (CSV)                                                                        |
+| `t1_ins_code_bss`     | Ancien code BSS complet, indice et désignation (`06992X0035/P1`), voir ci-dessous            |
+| `t1_ins_code_bss_nouveau` | Nouveau code BSS (`BSS001SEGK`), voir ci-dessous. Colonne absente de l'ancien fichier     |
 | `t2_code_ppe`         | Reconstruit par intersection spatiale avec `ppe_hilbert.parquet`                              |
 | `t2_code_ppr`         | Reconstruit par intersection spatiale avec `ppr_hilbert.parquet`                               |
 | `t2_code_ppi`         | Reconstruit par intersection spatiale avec `ppi_hilbert.parquet`                               |
@@ -179,6 +182,41 @@ captage → périmètre. On le reconstruit en projetant le point du captage
 `ppe`/`ppr`/`ppi` qui le contient (`ST_Intersects`). En cas de chevauchement
 de zones (rare), un seul code est retenu par captage (le plus petit,
 arbitrairement).
+
+**Codes BSS (`t1_ins_code_bss`, `t1_ins_code_bss_nouveau`)** : un ouvrage BSS
+a un ancien code, indice et désignation séparés par un `/` (`06992X0035/P1`),
+et un nouveau code (`BSS001SEGK`), donné dans sa propre colonne. Les ouvrages
+créés depuis le changement de format n'ont pas d'ancien code : le BRGM écrit
+alors `BSS002PRUZ/F1`, qui n'est pas repris.
+
+Il n'existe pas de table de conversion à part : les deux codes sont tirés de
+[`captages_identifiants.parquet`](#captages_identifiantsparquet), qui réunit
+les codes BSS du captage trouvés dans toutes les sources. Les captages dont
+le BRGM donne les deux codes (`code_bss_en_bss`, `bss_id_en_bss`) servent de
+pivot pour passer de l'un à l'autre : un indice n'y désigne qu'un ouvrage, et
+un nouveau code qu'un ancien. Pour chaque captage :
+
+| Origine | Règle | Captages | Ancien code | Nouveau code |
+|---|---|---|---|---|
+| BRGM | codes du BRGM du captage ; ses autres codes sont ignorés | 49 592 | 46 723 | 49 592 |
+| Autres sources, avec pivot | meilleur ancien et meilleur nouveau code parmi les autres sources (ARS 2026, puis référentiel 2024, puis `mca.csv`) ; celui qui manque est retrouvé par le pivot | 345 | 345 | 345 |
+| Autres sources | idem, sans que le pivot ne complète rien | 1 365 | 892 | 512 |
+| aucune | pas de code BSS lisible (`XXX`, `789-6-`, indices bouche-trou) | 6 812 | | |
+
+- Le code de l'ARS est ignoré quand le BRGM en donne un : ils désignent un
+  ouvrage différent pour 1 124 captages (ancien code) et 298 (nouveau code),
+  et ce sont les codes du BRGM qui servent à bancariser les analyses dans
+  ADES. C'est la même préférence que pour les captages prioritaires.
+- Combiner les sources complète des captages : pour `004004640`, l'ARS ne
+  donne que le nouveau code (`BSS002AWSL`) et le référentiel 2024 l'ancien
+  (`08717X0004/HY`).
+- Quand l'indice figure parmi les pivots, la désignation du BRGM remplace
+  celle des autres sources, qui diverge souvent (`L` pour `P`, `215` pour
+  `SOURCE`). Faute de désignation connue, l'ancien code se réduit à l'indice
+  (1 008 captages).
+- Auparavant, `t1_ins_code_bss` reprenait `indice_bss_sise` brut : indice
+  sans désignation, parfois déjà au nouveau format, avec des espaces et des
+  valeurs fantaisistes.
 
 #### Résultats observés (dernière exécution)
 
@@ -421,6 +459,10 @@ actifs présents seulement dans le nouveau restent à examiner individuellement
   département de l'entité gestionnaire (ARS) — qui peut différer pour un
   captage proche d'une frontière départementale. À vérifier avant de faire
   confiance à ce mapping.
+- **`t1_ins_code_bss`** : comparaison faite quand le champ reprenait
+  `indice_bss_sise` brut. Il donne désormais l'ancien code complet
+  (`06992X0035/P1`) : une comparaison texte avec l'ancien fichier, qui ne
+  donne que l'indice et parfois le nouveau code, n'a plus de sens.
 - **`t1_ins_cap_ref`/`t1_ins_cap_ref_lib`** divergent massivement (37 930
   `NULL` côté nouveau alors que l'ancien a une valeur) : l'approximation via
   `ref_mca` (cf. limites) ne couvre qu'une petite partie des regroupements

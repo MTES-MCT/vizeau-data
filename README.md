@@ -18,7 +18,7 @@ Outils des **Aires d'Alimentation de Captage (AAC)**, alimentés par une source 
 
 ### [`captages_parquet_generator`](captages_parquet_generator/README.md)
 
-Génère `captages.parquet`, le fichier de recensement des captages d'eau publique sensibles, à partir de données internes au ministère de la Transition écologique. Les codes des périmètres de protection (PPI, PPR, PPE) de chaque captage sont reconstruits par intersection spatiale. Produit aussi `captages_identifiants.parquet`, la table de correspondance entre les codes d'un captage (INS, PSV, ancien et nouveau code BSS), et, à partir de l'export des captages prioritaires, `captages_prioritaires.parquet` (captages prioritaires, lu par `aac/fiches`) et `anomalies_prioritaires.csv` (lignes de l'export à corriger).
+Génère `captages.parquet`, le fichier de recensement des captages d'eau publique sensibles, à partir de données internes au ministère de la Transition écologique. Les codes des périmètres de protection (PPI, PPR, PPE) de chaque captage sont reconstruits par intersection spatiale. Produit aussi `captages_identifiants.parquet`, la table de correspondance entre les codes d'un captage (INS, PSV, ancien et nouveau code BSS), et, à partir de l'export des captages prioritaires, `captages_prioritaires.parquet` (captages prioritaires, lu par `aac/fiches`, comme les codes BSS de `captages_new.parquet`) et `anomalies_prioritaires.csv` (lignes de l'export à corriger).
 
 ### [`analyses_parquet_generator`](analyses_parquet_generator/README.md)
 
@@ -56,5 +56,5 @@ data/
                 et sorties (captages_new.parquet, captages_identifiants.parquet,
                 captages_prioritaires.parquet, anomalies_prioritaires.csv) de
                 captages_parquet_generator ; ppr/ppe_hilbert sont aussi lus par aac/zonage,
-                captages_prioritaires.parquet par aac/fiches
+                captages_prioritaires.parquet et captages_new.parquet (codes BSS) par aac/fiches
 ```

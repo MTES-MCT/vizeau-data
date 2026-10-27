@@ -9,7 +9,7 @@
  *   analyses/  dossier de travail de analyses_parquet_generator (sources, référentiels, sorties)
  *   captages/  entrées et sorties de captages_parquet_generator ; ppr/ppe_hilbert.parquet
  *              (périmètres de protection, sensibles) sont aussi lus par aac/zonage,
- *              captages_prioritaires.parquet par aac/fiches
+ *              captages_prioritaires.parquet et captages_new.parquet (codes BSS) par aac/fiches
  */
 
 import { dirname, join, resolve } from "path";

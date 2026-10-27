@@ -2,9 +2,9 @@
 /**
  * Pipeline complet AAC :
  *   1. Télécharge depuis S3 vers data/s3/ les fichiers source absents
- *      (aac_hilbert.parquet y est déjà si geometries a été lancé). Lit aussi
- *      data/captages/captages_prioritaires.parquet, produit en local par
- *      captages_parquet_generator (generate_prioritaires.js)
+ *      (aac_hilbert.parquet y est déjà si geometries a été lancé). Lit aussi,
+ *      dans data/captages/, captages_prioritaires.parquet et captages_new.parquet
+ *      (codes BSS), produits en local par captages_parquet_generator
  *   2. Génère les fiches AAC (5 phases DuckDB + assemblage JS)
  *   3. Écrit le fichier aac.parquet dans fiches/output/ (copie dans data/s3/).
  *      L'envoi sur S3 se fait à part : npm run upload
@@ -39,6 +39,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const S3_DATA = dataPath('s3')
 const WORK = dataPath('aac')
 const CAPTAGES_PRIORITAIRES = dataPath('captages', 'captages_prioritaires.parquet')
+const CAPTAGES_NEW = dataPath('captages', 'captages_new.parquet')
 mkdirSync(S3_DATA, { recursive: true })
 mkdirSync(WORK, { recursive: true })
 
@@ -64,6 +65,12 @@ if (!S3_BUCKET || !S3_ACCESS || !S3_SECRET) {
 if (!existsSync(CAPTAGES_PRIORITAIRES)) {
   console.error(`Fichier introuvable : ${CAPTAGES_PRIORITAIRES}`)
   console.error('Le générer avec captages_parquet_generator : npm run prioritaires')
+  process.exit(1)
+}
+
+if (!existsSync(CAPTAGES_NEW)) {
+  console.error(`Fichier introuvable : ${CAPTAGES_NEW}`)
+  console.error('Le générer avec captages_parquet_generator : npm start')
   process.exit(1)
 }
 
@@ -212,7 +219,8 @@ function buildInstallations(captages, insPrioritaires) {
       const entry = {
         code: codeRef,
         nom: ref.t1_ins_nom,
-        ...(ref.t1_ins_code_bss ? { code_bss: ref.t1_ins_code_bss } : {}),
+        ...(ref.code_bss ? { code_bss: ref.code_bss } : {}),
+        ...(ref.code_bss_nouveau ? { code_bss_nouveau: ref.code_bss_nouveau } : {}),
         commune: ref.t1_com_nom,
         departement: ref.t1_dep_geo_lib,
         type: ref.t1_cap_type_lib,
@@ -229,7 +237,8 @@ function buildInstallations(captages, insPrioritaires) {
         .map((m) => ({
           code: m.t1_code_ins,
           nom: m.t1_ins_nom,
-          ...(m.t1_ins_code_bss ? { code_bss: m.t1_ins_code_bss } : {}),
+          ...(m.code_bss ? { code_bss: m.code_bss } : {}),
+          ...(m.code_bss_nouveau ? { code_bss_nouveau: m.code_bss_nouveau } : {}),
           etat: m.t1_ins_etat_lib,
         }))
 
@@ -344,6 +353,12 @@ t = Date.now()
 // sans ce garde-fou elles ne matcheraient de toute façon aucune AAC réelle
 // (aucune géométrie AAC ne couvre l'origine du Lambert 93), mais on préfère
 // le rendre explicite plutôt que de compter sur cette coïncidence.
+//
+// Codes BSS : repris de captages_new.parquet (référentiel DGS 2026, via la
+// table des identifiants) : `code_bss` est l'ancien code, indice et
+// désignation (`06992X0035/P1`), `code_bss_nouveau` le nouveau (`BSS001SEGK`).
+// Seuls les captages absents du référentiel gardent le code brut de
+// captages.parquet, rangé selon son format dans l'un ou l'autre champ.
 const captagesRows = await q(`
   WITH captages_dedup AS (
     SELECT *,
@@ -389,12 +404,18 @@ const captagesRows = await q(`
          cap.t1_dep_geo_lib, cap.t1_cap_type_lib, cap.t1_ins_nat_code,
          cap.t1_ins_usage_lib, cap.t1_ins_etat,
          cap.t1_ins_cap_ref, cap.t1_ins_cap_ref_lib,
-         cap.t1_ins_code_bss,
+         CASE WHEN bss.t1_code_ins IS NOT NULL THEN bss.t1_ins_code_bss
+              WHEN NOT starts_with(upper(trim(cap.t1_ins_code_bss)), 'BSS') THEN trim(cap.t1_ins_code_bss)
+         END AS code_bss,
+         CASE WHEN bss.t1_code_ins IS NOT NULL THEN bss.t1_ins_code_bss_nouveau
+              WHEN starts_with(upper(trim(cap.t1_ins_code_bss)), 'BSS') THEN upper(trim(cap.t1_ins_code_bss))
+         END AS code_bss_nouveau,
          COALESCE(cap.t2_code_ppe, '') AS t2_code_ppe,
          COALESCE(cap.t2_code_ppr, '') AS t2_code_ppr,
          COALESCE(cap.t2_code_ppi, '') AS t2_code_ppi
   FROM matches m
-  JOIN captages_uniq cap ON cap.t1_code_ins = m.t1_code_ins`)
+  JOIN captages_uniq cap ON cap.t1_code_ins = m.t1_code_ins
+  LEFT JOIN read_parquet('${CAPTAGES_NEW}') bss ON bss.t1_code_ins = cap.t1_code_ins`)
 
 const captagesMap = new Map()
 for (const r of captagesRows) {
