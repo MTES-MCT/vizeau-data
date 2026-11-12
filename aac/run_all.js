@@ -5,8 +5,9 @@
  *                   (lit aussi data/aac/sage_shape.zip et data/captages/pp{r,e}_hilbert.parquet)
  *   3. fiches     → fiches/output/aac.parquet (copie dans data/s3/)
  *                   (lit data/s3/aac_hilbert.parquet produit à l'étape 1, et
- *                   data/captages/captages_prioritaires.parquet et
- *                   captages_new.parquet produits par captages_parquet_generator)
+ *                   data/captages/captages_aac.parquet, captages_prioritaires.parquet
+ *                   et captages_new.parquet produits par captages_parquet_generator,
+ *                   à relancer avant : npm start, npm run prioritaires, npm run aac)
  *
  * Usage :
  *   npm run all

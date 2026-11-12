@@ -8,7 +8,7 @@ Le pipeline s'exécute en 3 étapes :
 
 1. **Téléchargement** — récupère depuis S3 vers `data/s3/` (à la racine du dépôt) les fichiers source absents (`aac_hilbert.parquet` y est déjà si `../geometries` a été lancé)
 2. **Génération des fiches** — 5 phases de traitement via DuckDB :
-   - Phase 1 : données légères (AAC, zones PP, communes, captages)
+   - Phase 1 : données légères (AAC, zones PP, communes, captages rattachés à chaque AAC par `captages_aac.parquet`)
    - Phase 2 : parcelles bio RPG annuelles (scan spatial)
    - Phase 3 : parcelles RPG toutes cultures (scan spatial)
    - Phase 4 : évolution annuelle des cultures (`RPG_YYYY.parquet` depuis S3, mis en cache)
@@ -21,8 +21,9 @@ Chaque fiche AAC contient : nom, code, surface, emprise (bbox), communes recouve
 
 - Node.js ≥ 22
 - Accès S3 (Scaleway par défaut, configurable)
+- `data/captages/captages_aac.parquet`, produit en local par [`captages_parquet_generator`](../../captages_parquet_generator/README.md#captages_aacparquet) (`npm start`, `npm run prioritaires` puis `npm run aac`) : il donne les captages de chaque AAC et la source de chaque lien. Ce script ne calcule plus lui-même le rattachement des captages aux AAC
 - `data/captages/captages_prioritaires.parquet`, produit en local par [`captages_parquet_generator`](../../captages_parquet_generator/README.md#captages_prioritairesparquet) (`npm start` puis `npm run prioritaires`) : il donne les captages prioritaires
-- `data/captages/captages_new.parquet`, produit en local par [`captages_parquet_generator`](../../captages_parquet_generator/README.md#captages_newparquet) (`npm start`) : seuls ses codes BSS sont lus
+- `data/captages/captages_new.parquet`, produit en local par [`captages_parquet_generator`](../../captages_parquet_generator/README.md#captages_newparquet) (`npm start`) : ses codes BSS, et les attributs des captages absents de `captages.parquet`
 
 ## Installation
 
@@ -65,9 +66,9 @@ Pour publier `output/aac.parquet` sur S3 : `npm run upload -- fiches` depuis `aa
 | Fichier                          | Description                                                      |
 | -------------------------------- | ---------------------------------------------------------------- |
 | `aac_hilbert.parquet`            | Géométries des AAC (WGS84)                                       |
-| `aac_pp_zones.parquet`           | Zones de protection (PPE, PPR, PPI)                              |
+| `aac_pp_zones.parquet`           | Zones de protection (PPE, PPR) de chaque AAC, pour les surfaces agricoles dans les PPE et PPR. Ses listes de codes PP ne servent plus |
 | `communes_hilbert.parquet`       | Géométries des communes                                          |
-| `captages.parquet`               | Installations de captage                                         |
+| `captages.parquet`               | Attributs des installations de captage (nom, commune, état…)     |
 | `rpg_bio_YYYY.parquet`           | Parcelles RPG bio annuelles (dans `S3_BIO_DIR`)                  |
 | `rpg_parcelles.parquet`          | Parcelles RPG toutes cultures                                    |
 | `RPG_YYYY.parquet`               | RPG annuel utilisé pour `cultures_evolution` (dans `S3_RPG_DIR`) |
@@ -110,12 +111,15 @@ Pour repartir de zéro : supprimer les sources de `data/s3/` et/ou `data/aac/cac
 
 Fichier `aac.parquet` écrit dans `output/` (ZSTD), contenant une ligne par AAC, triée par `code` (ordre numérique, codes non numériques en fin), avec les champs suivants :
 
-- `nom`, `code`, `prioritaire`, `date_creation`, `date_maj`, `bbox`, `surface`
+- `nom`, `code`, `prioritaire`, `date_creation`, `date_maj`, `bbox`, `surface`. `prioritaire` : l'AAC est citée par l'export des captages prioritaires (`code_aac` d'un ouvrage de `data/captages/captages_prioritaires.parquet`, même sans captage identifié), ou l'une de ses installations est prioritaire
 - `nb_captages_actifs`, `nb_installations`
 - `surface_agricole`, `nb_parcelles`
 - `communes` — liste des communes avec surface et répartition
 - `surface_agricole_utile` — SAU par groupe de culture (nb parcelles, surface, % SAU)
 - `surface_agricole_ppe` / `surface_agricole_ppr` — idem dans les zones de protection
 - `surface_agricole_bio` — nb parcelles, surface et part bio
-- `installations` — captage de référence (dont le code PPE de sa zone de protection), captages rattachés, statut prioritaire (`prioritaire` : l'un des captages de l'installation figure dans `data/captages/captages_prioritaires.parquet`), codes BSS de l'installation et des captages rattachés (`code_bss` : ancien code, indice et désignation `06992X0035/P1` ; `code_bss_nouveau` : nouveau code `BSS001SEGK`), repris de `data/captages/captages_new.parquet`. Les codes PPR et PPI servent à rattacher les captages aux AAC mais ne sont pas écrits dans la sortie
+- `installations` — installations dont un captage est rattaché à l'AAC dans `data/captages/captages_aac.parquet` : captage de référence (dont le code PPE de sa zone de protection), captages rattachés (membres d'un même mélange), statut prioritaire (`prioritaire` : l'un des captages de l'installation est prioritaire pour cette AAC, c'est-à-dire que `data/captages/captages_prioritaires.parquet` lui donne cette AAC, ou aucune AAC connue d'`AAC.gpkg`), codes BSS de l'installation et des captages rattachés (`code_bss` : ancien code, indice et désignation `06992X0035/P1` ; `code_bss_nouveau` : nouveau code `BSS001SEGK`), repris de `data/captages/captages_new.parquet`, et source du lien avec l'AAC :
+  - `source_rattachement` : `sandre` (référentiel AAC du Sandre), `export` (export des captages prioritaires), `point` (point du captage dans l'AAC), `perimetre` (périmètre de protection rapprochée ou immédiate, PPR ou PPI, dont 40 % au moins de la surface est dans l'AAC) ou `proximite` (seul captage à 100 m au plus du bord d'une AAC qu'aucune autre source ne rattache) ; la plus sûre parmi les captages de l'installation, dans cet ordre ;
+  - `recroisement_geographique` : `true` quand le lien n'est que géographique (`point`, `perimetre` ou `proximite`), à afficher comme tel ; `false` quand une table le donne (`sandre` ou `export`).
+  - L'installation est décrite (code, nom, commune, état…) par le captage de référence de son mélange s'il est rattaché à l'AAC, sinon par un autre membre rattaché : le plus sûrement rattaché, puis actif, puis le plus petit code. Code et attributs sont toujours ceux d'un même captage.
 - `cultures_evolution` — objet `{ repartition }`, où `repartition` contient les années `2020..2024` et, pour chaque groupe, `{ surface_ha, nb_parcelles }`

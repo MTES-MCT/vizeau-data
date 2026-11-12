@@ -3,8 +3,9 @@
  * Pipeline complet AAC :
  *   1. Télécharge depuis S3 vers data/s3/ les fichiers source absents
  *      (aac_hilbert.parquet y est déjà si geometries a été lancé). Lit aussi,
- *      dans data/captages/, captages_prioritaires.parquet et captages_new.parquet
- *      (codes BSS), produits en local par captages_parquet_generator
+ *      dans data/captages/, captages_aac.parquet (liens captage → AAC),
+ *      captages_prioritaires.parquet et captages_new.parquet (codes BSS),
+ *      produits en local par captages_parquet_generator
  *   2. Génère les fiches AAC (5 phases DuckDB + assemblage JS)
  *   3. Écrit le fichier aac.parquet dans fiches/output/ (copie dans data/s3/).
  *      L'envoi sur S3 se fait à part : npm run upload
@@ -38,6 +39,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 // propre à fiches (cache, fichiers temporaires).
 const S3_DATA = dataPath('s3')
 const WORK = dataPath('aac')
+const CAPTAGES_AAC = dataPath('captages', 'captages_aac.parquet')
 const CAPTAGES_PRIORITAIRES = dataPath('captages', 'captages_prioritaires.parquet')
 const CAPTAGES_NEW = dataPath('captages', 'captages_new.parquet')
 mkdirSync(S3_DATA, { recursive: true })
@@ -59,6 +61,12 @@ const RPG_REFRESH = process.env.RPG_REFRESH === '1'
 
 if (!S3_BUCKET || !S3_ACCESS || !S3_SECRET) {
   console.error('Variables manquantes : S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY')
+  process.exit(1)
+}
+
+if (!existsSync(CAPTAGES_AAC)) {
+  console.error(`Fichier introuvable : ${CAPTAGES_AAC}`)
+  console.error('Le générer avec captages_parquet_generator : npm start, npm run prioritaires puis npm run aac')
   process.exit(1)
 }
 
@@ -204,20 +212,47 @@ const GROUPES_CULTURES_EVOLUTION = {
   28: 'Divers',
 }
 
-function buildInstallations(captages, insPrioritaires) {
+// Sources des liens captage → AAC de captages_aac.parquet, de la plus sûre à
+// la moins sûre. Une installation prend la plus sûre de ses captages.
+const RANG_SOURCE = { sandre: 1, export: 2, point: 3, perimetre: 4, proximite: 5 }
+
+// Captage qui représente une installation quand le captage de référence de son
+// mélange n'est pas rattaché à l'AAC : le plus sûrement rattaché, puis un
+// captage actif, puis le plus petit code.
+function choisirRepresentant(membres) {
+  const actif = (m) => (m.t1_ins_etat_lib?.toUpperCase() === 'ACTIF' ? 0 : 1)
+  return [...membres].sort(
+    (a, b) =>
+      RANG_SOURCE[a.source_rattachement] - RANG_SOURCE[b.source_rattachement] ||
+      actif(a) - actif(b) ||
+      a.t1_code_ins.localeCompare(b.t1_code_ins)
+  )[0]
+}
+
+// Une installation regroupe les captages rattachés à l'AAC qui appartiennent au
+// même mélange (`t1_ins_cap_ref`). Elle est décrite par le captage de référence
+// du mélange s'il est lui-même rattaché à l'AAC, sinon par un autre de ses
+// membres (choisirRepresentant) : le code et les attributs de l'installation
+// sont toujours ceux d'un même captage. Auparavant, l'installation prenait le
+// code du captage de référence même quand il n'était pas rattaché à l'AAC, avec
+// le nom, la commune et l'état d'un autre membre (107 installations en
+// novembre 2026).
+//
+// `estPrioritaire(code_installation)` dit si un captage est prioritaire pour
+// cette AAC.
+function buildInstallations(captages, estPrioritaire) {
   const groups = new Map()
   for (const r of captages) {
     const ref = r.t1_ins_cap_ref || r.t1_code_ins
-    const refLib = r.t1_ins_cap_ref_lib || r.t1_ins_nom
-    if (!groups.has(ref)) groups.set(ref, { nom_ref: refLib, membres: new Map() })
-    groups.get(ref).membres.set(r.t1_code_ins, r)
+    if (!groups.has(ref)) groups.set(ref, new Map())
+    groups.get(ref).set(r.t1_code_ins, r)
   }
 
   return [...groups.entries()]
-    .map(([codeRef, { membres }]) => {
-      const ref = membres.get(codeRef) ?? [...membres.values()][0]
+    .map(([codeRef, membres]) => {
+      const ref = membres.get(codeRef) ?? choisirRepresentant(membres.values())
       const entry = {
-        code: codeRef,
+        code: ref.t1_code_ins,
         nom: ref.t1_ins_nom,
         ...(ref.code_bss ? { code_bss: ref.code_bss } : {}),
         ...(ref.code_bss_nouveau ? { code_bss_nouveau: ref.code_bss_nouveau } : {}),
@@ -230,10 +265,17 @@ function buildInstallations(captages, insPrioritaires) {
         ...(ref.t2_code_ppe ? { code_ppe: ref.t2_code_ppe } : {}),
       }
 
-      if ([...membres.keys()].some((ins) => insPrioritaires.has(ins))) entry.prioritaire = true
+      if ([...membres.keys()].some(estPrioritaire)) entry.prioritaire = true
+
+      // Lien de l'installation à l'AAC : sûr (référentiel AAC du Sandre ou
+      // export des captages prioritaires) ou recroisement géographique, à
+      // afficher comme tel.
+      const sources = [...membres.values()].map((m) => m.source_rattachement)
+      entry.source_rattachement = sources.sort((a, b) => RANG_SOURCE[a] - RANG_SOURCE[b])[0]
+      entry.recroisement_geographique = ![...membres.values()].some((m) => m.lien_sur)
 
       const rattaches = [...membres.values()]
-        .filter((m) => m.t1_code_ins !== codeRef)
+        .filter((m) => m.t1_code_ins !== ref.t1_code_ins)
         .map((m) => ({
           code: m.t1_code_ins,
           nom: m.t1_ins_nom,
@@ -309,9 +351,8 @@ for (const r of communesRows) {
 console.log(`  Communes chargées — ${communesRows.length} lignes (${Date.now() - t}ms)`)
 
 // Géométries AAC en Lambert 93, projetées et validées une seule fois : elles
-// servent au rattachement des captages ci-dessous ainsi qu'aux phases 2, 3 et 4,
-// qui les rejoignaient chacune en recalculant ST_Transform/ST_MakeValid à chaque
-// ligne appariée.
+// servent aux phases 2, 3 et 4, qui les rejoignaient chacune en recalculant
+// ST_Transform/ST_MakeValid à chaque ligne appariée.
 t = Date.now()
 await conn.run(`
   CREATE OR REPLACE TABLE aac_l93 AS
@@ -323,42 +364,37 @@ await conn.run(`
 console.log(`  Géométries AAC préparées en Lambert 93 (${Date.now() - t}ms)`)
 
 t = Date.now()
-// ─── Règle métier de rattachement captage → AAC ──────────────────────────────
+// ─── Rattachement captage → AAC ──────────────────────────────────────────────
 //
-// Un point de captage est rattaché à une AAC si (et seulement si) :
-//   (a) son point (t1_psv_x/y) est directement inclus dans la géométrie de
-//       l'AAC (intersection géométrique directe), OU
-//   (b) il appartient à un périmètre de protection (PPE, PPR ou PPI) qui est
-//       lui-même majoritairement inclus dans l'AAC.
+// Les liens viennent de captages_aac.parquet, produit par
+// captages_parquet_generator (generate_captages_aac.js), où sont toutes les
+// règles métier : référentiel AAC du Sandre, puis export des captages
+// prioritaires (liens sûrs), et, pour les seules AAC sans lien sûr, point du
+// captage ou PPR/PPI à 40 % au moins dans l'AAC (recroisement
+// géographique, à 2,5 km au plus), et en dernier recours le seul captage à
+// moins de 100 m du bord de l'AAC (`proximite`). Chaque lien porte sa source
+// (`source_rattachement`) et `lien_sur`.
 //
-// Le cas (b) n'est pas calculé ici : il est précalculé en amont sous forme de
-// listes de codes PPE/PPR/PPI par AAC dans aac_pp_zones.parquet (le seuil de
-// "majoritairement inclus" est appliqué lors de la génération de ce fichier).
-// Un captage est donc rattaché via (b) si le code de périmètre auquel il
-// appartient (t2_code_ppe/ppr/ppi) figure dans la liste associée à l'AAC.
+// Ce script calculait auparavant lui-même les liens (point du captage dans
+// l'AAC, ou code PPE/PPR/PPI du captage dans les listes d'aac_pp_zones.parquet),
+// sans tenir compte de l'export ni du Sandre.
 //
-// ⚠️ Implémentation initiale (incomplète, à ne pas réintroduire) : seul le cas
-// (b) était implémenté, via une jointure unique entre aac_pp_zones et
-// captages sur les codes PPE/PPR/PPI. Cela ratait tous les captages dont le
-// point tombe dans une AAC sans qu'un code de périmètre corresponde (ex. PPE/
-// PPR/PPI non renseigné dans captages.parquet) — cf. l'AAC de LA MAXE (code
-// 5186) ou PRISE DE MAQUENS - Carcassonne (code 1549), où le nombre
-// d'installations rattachées était sous-estimé de 30 à 60 %. La requête
-// ci-dessous calcule donc les deux cas séparément (CTE `matches`) et les
-// combine par UNION (dédoublonnage automatique des couples cdaac/captage
-// trouvés par les deux voies).
-//
-// Les coordonnées (0, 0) dans t1_psv_x/y (~430 lignes sur 53 775, valeur
-// placeholder pour donnée manquante) sont explicitement exclues du cas (a) :
-// sans ce garde-fou elles ne matcheraient de toute façon aucune AAC réelle
-// (aucune géométrie AAC ne couvre l'origine du Lambert 93), mais on préfère
-// le rendre explicite plutôt que de compter sur cette coïncidence.
+// Attributs des captages : ceux de l'ancien captages.parquet (source ARS), dont
+// les doublons de t1_code_ins sont écartés comme avant. Les captages liés qui en
+// sont absents (référentiel DGS plus récent) prennent ceux de
+// captages_new.parquet, qui a les mêmes colonnes.
 //
 // Codes BSS : repris de captages_new.parquet (référentiel DGS 2026, via la
 // table des identifiants) : `code_bss` est l'ancien code, indice et
 // désignation (`06992X0035/P1`), `code_bss_nouveau` le nouveau (`BSS001SEGK`).
 // Seuls les captages absents du référentiel gardent le code brut de
 // captages.parquet, rangé selon son format dans l'un ou l'autre champ.
+const COLONNES_CAPTAGE = `t1_code_ins, t1_ins_nom, t1_com_nom, t1_com_insee,
+         t1_ins_etat_lib, t1_uge_mo_nom,
+         t1_dep_geo_lib, t1_cap_type_lib, t1_ins_nat_code,
+         t1_ins_usage_lib, t1_ins_etat,
+         t1_ins_cap_ref, t1_ins_cap_ref_lib, t1_ins_code_bss,
+         t2_code_ppe, t2_code_ppr, t2_code_ppi`
 const captagesRows = await q(`
   WITH captages_dedup AS (
     SELECT *,
@@ -375,30 +411,13 @@ const captagesRows = await q(`
            ) AS rn
     FROM read_parquet('${localPath('captages.parquet')}')
   ),
-  captages_uniq AS (
-    SELECT *,
-           CASE
-             WHEN TRY_CAST(t1_psv_x AS DOUBLE) = 0 AND TRY_CAST(t1_psv_y AS DOUBLE) = 0 THEN NULL
-             ELSE ST_Point(TRY_CAST(t1_psv_x AS DOUBLE), TRY_CAST(t1_psv_y AS DOUBLE))
-           END AS point_l93
-    FROM captages_dedup
-    WHERE rn = 1
-  ),
-  matches AS (
-    SELECT a.cdaac, cap.t1_code_ins
-    FROM aac_l93 a
-    JOIN captages_uniq cap
-      ON cap.point_l93 IS NOT NULL AND ST_Intersects(cap.point_l93, a.geom_l93_valid)
-    UNION
-    SELECT pp.cdaac, cap.t1_code_ins
-    FROM read_parquet('${localPath('aac_pp_zones.parquet')}') pp
-    JOIN captages_uniq cap ON (
-      (pp.ppe_codes IS NOT NULL AND list_contains(pp.ppe_codes, cap.t2_code_ppe)) OR
-      (pp.ppr_codes IS NOT NULL AND list_contains(pp.ppr_codes, cap.t2_code_ppr)) OR
-      (pp.ppi_codes IS NOT NULL AND list_contains(pp.ppi_codes, cap.t2_code_ppi))
-    )
+  captages_attr AS (
+    SELECT ${COLONNES_CAPTAGE} FROM captages_dedup WHERE rn = 1
+    UNION ALL
+    SELECT ${COLONNES_CAPTAGE} FROM read_parquet('${CAPTAGES_NEW}')
+    WHERE t1_code_ins NOT IN (SELECT t1_code_ins FROM captages_dedup)
   )
-  SELECT m.cdaac,
+  SELECT l.cdaac, l.source AS source_rattachement, l.lien_sur,
          cap.t1_code_ins, cap.t1_ins_nom, cap.t1_com_nom, cap.t1_com_insee,
          cap.t1_ins_etat_lib, cap.t1_uge_mo_nom,
          cap.t1_dep_geo_lib, cap.t1_cap_type_lib, cap.t1_ins_nat_code,
@@ -413,8 +432,8 @@ const captagesRows = await q(`
          COALESCE(cap.t2_code_ppe, '') AS t2_code_ppe,
          COALESCE(cap.t2_code_ppr, '') AS t2_code_ppr,
          COALESCE(cap.t2_code_ppi, '') AS t2_code_ppi
-  FROM matches m
-  JOIN captages_uniq cap ON cap.t1_code_ins = m.t1_code_ins
+  FROM read_parquet('${CAPTAGES_AAC}') l
+  JOIN captages_attr cap ON cap.t1_code_ins = l.code_installation
   LEFT JOIN read_parquet('${CAPTAGES_NEW}') bss ON bss.t1_code_ins = cap.t1_code_ins`)
 
 const captagesMap = new Map()
@@ -424,21 +443,49 @@ for (const r of captagesRows) {
 }
 console.log(`  Captages chargés — ${captagesRows.length} lignes (${Date.now() - t}ms)`)
 
-// Captages prioritaires : codes INS auxquels captages_parquet_generator a
-// résolu les ouvrages de l'export des captages prioritaires (par leurs codes
-// INS, PSV ou BSS). Une installation est prioritaire si l'un de ses membres
-// (captage de référence ou rattaché) y figure. Comparer les codes BSS sous
-// forme de texte, comme auparavant, ratait la plupart des captages : les
-// sources mélangent ancien (`06992X0035`) et nouveau (`BSS002HYFB`) format.
+// Captages prioritaires : captages_prioritaires.parquet donne, pour chaque
+// ouvrage de l'export des captages prioritaires, l'AAC retenue (`code_aac`) et
+// les captages auxquels captages_parquet_generator l'a résolu (par ses codes
+// INS, PSV ou BSS ; `code_installation` vide pour un ouvrage non résolu).
+// Comparer les codes BSS sous forme de texte, comme auparavant, ratait la
+// plupart des captages : les sources mélangent ancien (`06992X0035`) et
+// nouveau (`BSS002HYFB`) format.
+//
+// Le critère est d'être dans l'export (« le fichier de Lucile ») :
+// - une AAC est prioritaire si l'export la cite (`code_aac` d'un ouvrage, même
+//   non résolu en captage, comme les prises d'eau de surface), ou si l'une de
+//   ses installations est prioritaire ;
+// - un captage est prioritaire pour une AAC si l'export lui donne cette AAC,
+//   ou s'il ne lui donne aucune AAC connue d'AAC.gpkg (code vide ou inconnu :
+//   on ne sait pas de quelle AAC il est prioritaire). Une installation est
+//   prioritaire si l'un de ses membres l'est.
+// Auparavant, un captage prioritaire l'était dans toutes les AAC où il est
+// rattaché, et la pastille d'une AAC ne venait que de ses installations : une
+// AAC qui contient le captage prioritaire d'une autre AAC la prenait (36 AAC
+// en novembre 2026), une AAC citée dont l'ouvrage n'est pas résolu ne l'avait
+// pas (66 AAC).
 t = Date.now()
-const insRows = await q(
-  `SELECT DISTINCT code_installation FROM read_parquet('${CAPTAGES_PRIORITAIRES}')`
+const prioRows = await q(
+  `SELECT DISTINCT code_installation, code_aac FROM read_parquet('${CAPTAGES_PRIORITAIRES}')`
 )
-const insPrioritaires = new Set(insRows.map((r) => r.code_installation))
-console.log(`  ${insPrioritaires.size} captages prioritaires chargés (${Date.now() - t}ms)`)
+const aacCitees = new Set(prioRows.filter((r) => r.code_aac).map((r) => r.code_aac))
+const aacPrioritaires = new Map() // code_installation → AAC retenues (null : aucune)
+for (const r of prioRows) {
+  if (!r.code_installation) continue
+  if (!aacPrioritaires.has(r.code_installation)) aacPrioritaires.set(r.code_installation, new Set())
+  aacPrioritaires.get(r.code_installation).add(r.code_aac ?? null)
+}
+const estPrioritairePour = (cdaac) => (ins) => {
+  const aacs = aacPrioritaires.get(ins)
+  if (!aacs) return false
+  return aacs.has(cdaac) || [...aacs].some((a) => a === null || !aacMap.has(a))
+}
+console.log(
+  `  ${aacPrioritaires.size} captages prioritaires, ${aacCitees.size} AAC citées par l'export (${Date.now() - t}ms)`
+)
 
 // Géométries des périmètres de protection en Lambert 93
-// (aac_l93 est déjà créée plus haut, pour le rattachement des captages.)
+// (aac_l93 est déjà créée plus haut.)
 
 t = Date.now()
 await conn.run(`
@@ -625,8 +672,8 @@ for (const [cdaac, aac] of aacMap) {
     (c) => c.t1_ins_etat_lib?.toUpperCase() === 'ACTIF'
   ).length
 
-  const installations = buildInstallations(captages, insPrioritaires)
-  const estPrioritaire = installations.some((i) => i.prioritaire === true)
+  const installations = buildInstallations(captages, estPrioritairePour(cdaac))
+  const estPrioritaire = aacCitees.has(cdaac) || installations.some((i) => i.prioritaire === true)
 
   const line =
     JSON.stringify({

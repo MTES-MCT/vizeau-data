@@ -2,7 +2,8 @@
   "type": "module",
   "scripts": {
     "start": "node generate_captages_parquet.js",
-    "prioritaires": "node generate_prioritaires.js"
+    "prioritaires": "node generate_prioritaires.js",
+    "aac": "node generate_captages_aac.js"
   },
   "dependencies": {
     "@duckdb/node-api": "^1.4.4-r.2"

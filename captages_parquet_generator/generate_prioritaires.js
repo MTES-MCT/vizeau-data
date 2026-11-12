@@ -5,8 +5,10 @@
  * qui posent problème.
  *
  * Sorties (dans data/captages/) :
- *   - captages_prioritaires.parquet  une ligne par couple (OPR, captage) : sert à
- *     poser le flag `prioritaire` des installations dans aac/fiches
+ *   - captages_prioritaires.parquet  une ligne par OPR, AAC et captage (captage
+ *     vide pour un OPR non résolu) : sert à poser le flag `prioritaire` des AAC
+ *     et des installations dans aac/fiches, et donne à generate_captages_aac.js
+ *     les liens captage → AAC de l'export
  *   - anomalies_prioritaires.csv     lignes de l'export non résolues ou
  *     incohérentes, à renvoyer au producteur de l'export
  *
@@ -16,8 +18,9 @@
  *     prélèvement (PTP) du Sandre, pour leurs codes BSS (cf. PTP_URL)
  *   - data/captages/captages_identifiants.parquet et captages_new.parquet
  *     (produits par generate_captages_parquet.js, à lancer avant)
- *   - data/aac/AAC.gpkg (couche AAC_FRA), pour vérifier les codes AAC et
- *     mesurer la distance entre un captage et son AAC
+ *   - data/aac/AAC.gpkg (couche AAC_FRA), pour les PTP de chaque AAC
+ *     (référentiel AAC du Sandre, qui prime sur le code AAC de l'export), pour
+ *     vérifier les codes AAC et mesurer la distance entre un captage et son AAC
  *
  * Usage : node generate_prioritaires.js
  */
@@ -26,6 +29,7 @@ import { DuckDBInstance } from '@duckdb/node-api'
 import { existsSync } from 'fs'
 import { dataPath } from '../data-dir.mjs'
 import { NORMALISATION_MACROS } from './normalisation.js'
+import { DISTANCE_MAX_AAC_M, aacSandreSql, autresAacSql } from './regles_aac.js'
 
 const path = (name) => dataPath('captages', name)
 
@@ -39,10 +43,6 @@ const CAPTAGES = path('captages_new.parquet')
 const AAC_GPKG = dataPath('aac', 'AAC.gpkg')
 const OUTPUT = path('captages_prioritaires.parquet')
 const OUTPUT_ANOMALIES = path('anomalies_prioritaires.csv')
-
-// Au-delà de cette distance entre le point du captage et la géométrie de son
-// AAC, le lien donné par l'export est jugé suspect (question 4 de plan-captages.md).
-const DISTANCE_MAX_AAC_M = 10_000
 
 for (const file of [EXPORT_CSV, PTP_CSV, IDENTIFIANTS, CAPTAGES, AAC_GPKG]) {
   if (!existsSync(file)) {
@@ -69,7 +69,9 @@ console.log('═══ Résolution de l\'export des captages prioritaires ══
 //
 // Un OPR est « seul », « porteur » ou « rattaché » à un porteur (`opr_rattach`).
 // Seuls les OPR seuls ou porteurs ont un `code_aac` : un rattaché hérite de
-// celui de son porteur (hypothèse de la question 3 de plan-captages.md).
+// celui de son porteur (question 3 de plan-captages.md). Ce code AAC de
+// l'export (`code_aac_export`) ne sert que si le référentiel AAC du Sandre ne
+// donne pas d'AAC à l'OPR (voir « AAC de chaque OPR » ci-dessous).
 
 let t = Date.now()
 await run(`
@@ -80,12 +82,12 @@ await run(`
   CREATE TABLE opr AS
   SELECT e.code_opr, e.statut_opr, NULLIF(trim(e.opr_rattach), '') AS opr_rattach, e.nom_sandre,
          e.code_ins, e.code_psv, e.code_bss, e.code_ptp_sandre, e.coord_x_wgs84, e.coord_y_wgs84,
-         NULLIF(trim(e.code_aac), '') AS code_aac_export,
-         COALESCE(NULLIF(trim(e.code_aac), ''), NULLIF(trim(p.code_aac), '')) AS code_aac,
+         NULLIF(trim(e.code_aac), '') AS code_aac_propre,
+         COALESCE(NULLIF(trim(e.code_aac), ''), NULLIF(trim(p.code_aac), '')) AS code_aac_export,
          CASE
            WHEN NULLIF(trim(e.code_aac), '') IS NOT NULL THEN 'export'
-           WHEN NULLIF(trim(p.code_aac), '') IS NOT NULL THEN 'porteur'
-         END AS code_aac_source,
+           WHEN NULLIF(trim(p.code_aac), '') IS NOT NULL THEN 'export_porteur'
+         END AS code_aac_export_source,
          p.code_opr IS NOT NULL AS porteur_trouve
   FROM export_raw e
   LEFT JOIN export_raw p ON p.code_opr = NULLIF(trim(e.opr_rattach), '')
@@ -123,6 +125,59 @@ const [ptpStats] = await q(`
 console.log(
   `  ${ptpStats.ptp} PTP dans l'export, ${ptpStats.trouves} trouvés dans la couche Sandre, ` +
     `${ptpStats.avec_bss} avec un code BSS (${Date.now() - t}ms)`
+)
+
+// ─── AAC de chaque OPR ────────────────────────────────────────────────────────
+//
+// Le référentiel AAC du Sandre (champ `PTP` d'AAC.gpkg) est la source de
+// vérité principale, l'export ne fait que le compléter (question 10 de
+// plan-captages.md). Pour chaque OPR, dans cet ordre :
+//   sandre          AAC qui citent un PTP de l'OPR (une AAC gelée ne compte pas
+//                   pour un PTP qu'une AAC validée cite aussi, cf. regles_aac.js)
+//   sandre_porteur  pour un rattaché sans AAC du Sandre, celles de son porteur
+//   export          code_aac de l'OPR dans l'export
+//   export_porteur  pour un rattaché, code_aac de son porteur
+// Le code de l'export est ignoré dès que le Sandre donne une AAC à l'OPR ; s'il
+// en diffère, c'est signalé (`aac_differente_sandre`). Un code de l'export
+// absent d'AAC.gpkg est gardé tel quel (signalé en `aac_inconnue`), mais ne
+// donne aucun lien captage → AAC.
+
+t = Date.now()
+await run(aacSandreSql(AAC_GPKG))
+await run(`
+  CREATE TABLE opr_aac_sandre AS
+  SELECT DISTINCT p.code_opr, a.cdaac
+  FROM ptp_opr p
+  JOIN aac_ptp a USING (code_ptp)
+`)
+await run(`
+  CREATE TABLE opr_aac AS
+  WITH sandre AS (
+    SELECT code_opr, cdaac AS code_aac, 'sandre' AS code_aac_source FROM opr_aac_sandre
+  ),
+  sandre_porteur AS (
+    SELECT o.code_opr, s.cdaac AS code_aac, 'sandre_porteur' AS code_aac_source
+    FROM opr o
+    JOIN opr_aac_sandre s ON s.code_opr = o.opr_rattach
+    WHERE o.code_opr NOT IN (SELECT code_opr FROM sandre)
+  )
+  SELECT * FROM sandre
+  UNION ALL
+  SELECT * FROM sandre_porteur
+  UNION ALL
+  SELECT code_opr, code_aac_export, code_aac_export_source
+  FROM opr
+  WHERE code_aac_export IS NOT NULL
+    AND code_opr NOT IN (SELECT code_opr FROM sandre UNION ALL SELECT code_opr FROM sandre_porteur)
+`)
+const aacStats = await q(`
+  SELECT code_aac_source, COUNT(DISTINCT code_opr) AS opr
+  FROM opr_aac GROUP BY code_aac_source ORDER BY code_aac_source
+`)
+console.log(
+  `  ${(await q('SELECT COUNT(*) n FROM aac_ptp'))[0].n} couples (AAC, PTP) dans AAC.gpkg ; OPR par origine de leur AAC : ` +
+    aacStats.map((r) => `${r.code_aac_source} ${r.opr}`).join(', ') +
+    ` (${Date.now() - t}ms)`
 )
 
 // ─── Résolution des codes en captages ─────────────────────────────────────────
@@ -198,13 +253,17 @@ await run(`
   JOIN rang_retenu r ON r.code_opr = c.code_opr AND r.rang = c.rang
   GROUP BY c.code_opr, c.code_installation, c.rang
 `)
+// Les OPR qu'aucun code ne résout en captage (signalés en `opr_sans_captage`)
+// y figurent aussi, avec `code_installation` vide : aac/fiches en tire les AAC
+// citées par l'export, pour leur flag `prioritaire`.
 await run(`
   COPY (
-    SELECT o.code_opr, o.statut_opr, o.opr_rattach, o.code_aac, o.code_aac_source,
+    SELECT o.code_opr, o.statut_opr, o.opr_rattach, a.code_aac, a.code_aac_source, o.code_aac_export,
            l.code_installation, l.resolu_par
-    FROM liens l
-    JOIN opr o USING (code_opr)
-    ORDER BY o.code_opr, l.code_installation
+    FROM opr o
+    LEFT JOIN liens l USING (code_opr)
+    LEFT JOIN opr_aac a USING (code_opr)
+    ORDER BY o.code_opr, a.code_aac, l.code_installation
   ) TO '${OUTPUT}' (FORMAT PARQUET)
 `)
 const [stats] = await q(`
@@ -224,7 +283,13 @@ console.log(`  Fichier écrit : ${OUTPUT}`)
 //   porteur_absent      OPR rattaché dont le porteur n'est pas dans l'export
 //   opr_sans_captage    aucun code de l'OPR ne mène à un captage du référentiel
 //                       (PTP sans code BSS, coordonnées seules, codes inconnus)
-//   captage_eloigne_aac captage à plus de DISTANCE_MAX_AAC_M de l'AAC de son OPR
+//   captage_eloigne_aac captage à plus de DISTANCE_MAX_AAC_M de l'AAC retenue
+//                       pour son OPR (lien gardé quand même, cf. regles_aac.js)
+//   captage_dans_autre_aac captage hors de l'AAC retenue pour son OPR, mais
+//                       dans une autre AAC (autresAacSql, regles_aac.js)
+//   aac_differente_sandre code_aac de l'export absent des AAC que le Sandre donne
+//                       à l'OPR (signalé sur l'OPR qui porte le code, pas sur
+//                       ses rattachés) : l'AAC du Sandre est retenue
 //   code_autre_captage  code PSV ou BSS de l'OPR ou de ses PTP qui désigne un
 //                       captage autre que ceux retenus pour l'OPR (cf. résolution
 //                       ci-dessus)
@@ -235,17 +300,22 @@ console.log(`  Fichier écrit : ${OUTPUT}`)
 //                       seulement
 
 t = Date.now()
-await run(`
-  CREATE TABLE aac AS
-  SELECT CAST(cdaac AS VARCHAR) AS cdaac, ST_Transform(geom, 'EPSG:4326', 'EPSG:2154', true) AS geom_l93
-  FROM ST_Read('${AAC_GPKG}', layer='AAC_FRA')
-`)
+await run(
+  autresAacSql(
+    'dans_autre_aac',
+    `SELECT oa.code_aac AS cdaac, l.code_installation, ST_Point(c.t1_psv_x, c.t1_psv_y) AS point_l93
+     FROM liens l
+     JOIN opr_aac oa USING (code_opr)
+     JOIN read_parquet('${CAPTAGES}') c ON c.t1_code_ins = l.code_installation
+     WHERE c.t1_psv_x IS NOT NULL AND c.t1_psv_y IS NOT NULL AND NOT (c.t1_psv_x = 0 AND c.t1_psv_y = 0)`
+  )
+)
 await run(`
   CREATE TABLE anomalies AS
   SELECT 'aac_inconnue' AS anomalie, o.code_opr, NULL::VARCHAR AS code_installation, NULL::INTEGER AS distance_m,
-         'code_aac « ' || o.code_aac_export || ' » absent d''AAC.gpkg' AS detail
+         'code_aac « ' || o.code_aac_propre || ' » absent d''AAC.gpkg' AS detail
   FROM opr o
-  WHERE o.code_aac_export IS NOT NULL AND o.code_aac_export NOT IN (SELECT cdaac FROM aac)
+  WHERE o.code_aac_propre IS NOT NULL AND o.code_aac_propre NOT IN (SELECT cdaac FROM aac_sandre)
 
   UNION ALL
   SELECT 'porteur_absent', o.code_opr, NULL, NULL,
@@ -263,15 +333,36 @@ await run(`
   WHERE o.code_opr NOT IN (SELECT code_opr FROM liens)
 
   UNION ALL
-  SELECT 'captage_eloigne_aac', o.code_opr, l.code_installation,
+  SELECT 'captage_eloigne_aac', l.code_opr, l.code_installation,
          CAST(round(ST_Distance(ST_Point(c.t1_psv_x, c.t1_psv_y), a.geom_l93)) AS INTEGER),
-         'AAC ' || o.code_aac || CASE WHEN o.code_aac_source = 'porteur' THEN ' (héritée du porteur)' ELSE '' END
+         'AAC ' || oa.code_aac || ' (' || oa.code_aac_source || ')'
   FROM liens l
-  JOIN opr o USING (code_opr)
-  JOIN aac a ON a.cdaac = o.code_aac
+  JOIN opr_aac oa USING (code_opr)
+  JOIN aac_sandre a ON a.cdaac = oa.code_aac
   JOIN read_parquet('${CAPTAGES}') c ON c.t1_code_ins = l.code_installation
   WHERE c.t1_psv_x IS NOT NULL AND c.t1_psv_y IS NOT NULL
     AND ST_Distance(ST_Point(c.t1_psv_x, c.t1_psv_y), a.geom_l93) > ${DISTANCE_MAX_AAC_M}
+
+  UNION ALL
+  SELECT 'captage_dans_autre_aac', l.code_opr, l.code_installation, d.distance_m,
+         'AAC ' || oa.code_aac || ' (' || oa.code_aac_source || ') ; captage dans : ' || d.autres_aac_libelle
+  FROM liens l
+  JOIN opr_aac oa USING (code_opr)
+  JOIN dans_autre_aac d ON d.cdaac = oa.code_aac AND d.code_installation = l.code_installation
+
+  UNION ALL
+  SELECT 'aac_differente_sandre', o.code_opr, NULL, NULL,
+         'code_aac « ' || o.code_aac_propre || ' » de l''export ('
+           || COALESCE(lower(e.statut) || ', mise à jour le ' || e.date_maj, 'absent d''AAC.gpkg')
+           || ') remplacé par l''AAC du Sandre : '
+           || string_agg(s.cdaac || ' (' || lower(a.statut) || ', mise à jour le ' || a.date_maj || ')', ', ' ORDER BY s.cdaac)
+  FROM opr o
+  JOIN opr_aac_sandre s USING (code_opr)
+  JOIN aac_sandre a ON a.cdaac = s.cdaac
+  LEFT JOIN aac_sandre e ON e.cdaac = o.code_aac_propre
+  WHERE o.code_aac_propre IS NOT NULL
+  GROUP BY o.code_opr, o.code_aac_propre, e.statut, e.date_maj
+  HAVING NOT bool_or(s.cdaac = o.code_aac_propre)
 
   UNION ALL
   SELECT 'code_autre_captage', c.code_opr, c.code_installation, NULL,
@@ -317,8 +408,9 @@ await run(`
 `)
 await run(`
   COPY (
-    SELECT a.anomalie, a.code_opr, o.statut_opr, o.opr_rattach, o.nom_sandre, o.code_aac,
-           a.code_installation, a.distance_m, a.detail
+    SELECT a.anomalie, a.code_opr, o.statut_opr, o.opr_rattach, o.nom_sandre,
+           (SELECT string_agg(code_aac, '|' ORDER BY code_aac) FROM opr_aac oa WHERE oa.code_opr = a.code_opr) AS code_aac,
+           o.code_aac_export, a.code_installation, a.distance_m, a.detail
     FROM anomalies a
     JOIN opr o USING (code_opr)
     ORDER BY a.anomalie, a.code_opr, a.code_installation, a.detail
@@ -333,7 +425,8 @@ console.table(
   await q(`
     SELECT o.statut_opr, COUNT(*) AS opr,
            COUNT(*) FILTER (WHERE o.code_opr IN (SELECT code_opr FROM liens)) AS resolus,
-           COUNT(o.code_aac) AS avec_aac
+           COUNT(*) FILTER (WHERE o.code_opr IN (SELECT code_opr FROM opr_aac)) AS avec_aac,
+           COUNT(*) FILTER (WHERE o.code_opr IN (SELECT code_opr FROM opr_aac WHERE code_aac_source LIKE 'sandre%')) AS aac_sandre
     FROM opr o
     GROUP BY o.statut_opr
     ORDER BY o.statut_opr

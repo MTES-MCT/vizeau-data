@@ -40,7 +40,7 @@ tippecanoe enregistre sa ligne de commande dans `generator_options`. Il est lanc
 
 ### Typage des champs
 Chaque export `ogr2ogr` utilise une requête SQLite (dans `SOURCES`) qui reproduit le schéma de la couche d'origine :
-- `ppr`, `ppe` : `code_pp` seul (le nom de la couche Parquet est le nom du fichier sans extension) ;
+- `ppr`, `ppe` : `code_pp` seul (le nom de la couche Parquet est le nom du fichier sans extension). Ne pas y ajouter `psv_code` ni les autres attributs d'origine, pourtant présents dans les parquets : le lien périmètre → point de surveillance ne doit pas être diffusé, et le PMTiles l'est ;
 - `aac` : `CdAAC` et dates castés en texte, `ArreteDelimitationAAC` en entier ; `NomDeAACAdministratif` nettoyé après l'export par `nettoyerLibelle()` (le dialecte SQLite d'ogr2ogr n'a pas de `regexp_replace`) ;
 - `sage` : champs du shapefile repris tels quels ; `REPLACE` rétablit « œuvre » dans `lb_etat`/`lb_ss_etat` (DBF en Latin-1, « œ » y devient « ? »). Lu via `/vsizip/` quand le chemin finit par `.zip`.
 

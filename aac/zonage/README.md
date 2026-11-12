@@ -19,7 +19,7 @@ Les fichiers de `data/` ne sont pas versionnés (voir [`data-dir.mjs`](../../dat
 
 Ils ne peuvent pas être téléchargés depuis une source publique. Ils servent aussi d'entrées à [`captages_parquet_generator`](../../captages_parquet_generator/README.md), d'où leur emplacement dans `data/captages/`.
 
-Contenu : une entité par couple (périmètre, captage rattaché), avec le seul attribut `code_pp` (`001_R_0012`, `001_E_0001`…). Un même périmètre apparaît donc plusieurs fois, une fois par captage (14 049 PPE pour 9 490 codes, 30 273 PPR pour 19 943 codes). Ces doublons sont conservés tels quels.
+Contenu : une entité par couple (périmètre, captage rattaché), identifiée par `code_pp` (`001_R_0012`, `001_E_0001`…). Un même périmètre apparaît donc plusieurs fois, une fois par captage (14 049 PPE pour 9 490 codes, 30 273 PPR pour 19 943 codes). Ces doublons sont conservés tels quels. Les fichiers portent aussi les attributs d'origine des couches Cart'eaux (`psv_code`, `ins_cap_ref`…, détail dans [`captages_parquet_generator`](../../captages_parquet_generator/README.md#attributs-dorigine-des-ppr-et-ppe)). Le PMTiles n'en reprend aucun : seul `code_pp` est exporté.
 
 ### Télécharger `sage_shape.zip`
 
@@ -106,7 +106,7 @@ ppr_hilbert.parquet   ppe_hilbert.parquet   AAC.gpkg (AAC_FRA)   sage_shape.zip 
 ```
 
 1. **Export GeoJSON** — chaque source est exportée en GeoJSON (une entité par ligne) par une requête SQLite qui fixe les champs et leurs types :
-   - `ppr`, `ppe` : `code_pp` seul.
+   - `ppr`, `ppe` : `code_pp` seul, les autres attributs des parquets sont écartés (`psv_code` ne doit pas être diffusé).
    - `aac` : `CdAAC` et dates en texte, `ArreteDelimitationAAC` en entier, `NivQualite` en nombre. Les champs JSON (`AdminAAC`, `CommandAAC`, `PTP`, `CodesAlternatifs`, `DepArreteDelim`) sont sérialisés en chaîne par tippecanoe. `NomDeAACAdministratif` est ensuite nettoyé comme dans [`aac/geometries`](../geometries/README.md), pour que la carte et les fiches affichent le même libellé : apostrophes typographiques (`’`) et échappées (`''`, `''''`) ramenées à `'`, tirets et parenthèses mal espacés corrigés, espaces multiples réduits, espaces de début et de fin supprimés.
    - `sage` : champs repris tels quels du shapefile (dont `cd_type_pe` et `lb_type_pe`, tronqués à 10 caractères), « ?uvre » remplacé par « œuvre » dans `lb_etat` et `lb_ss_etat`.
 2. **Tuilage** — tippecanoe génère les quatre couches ensemble, avec les options de la génération d'origine (zooms 0 à 14, `--drop-densest-as-needed` calculé sur l'ensemble des couches). Il est lancé depuis le dossier temporaire avec des chemins relatifs : la commande enregistrée dans les métadonnées (`generator_options`) ne contient aucun chemin local.
@@ -134,6 +134,6 @@ Nombres d'entités à la date de rédaction (octobre 2026).
 
 ### Différences avec le PMTiles d'origine (généré fin 2025)
 
-- `ppr`, `ppe` : mêmes entités et mêmes géométries, mais seul `code_pp` est conservé. Les autres attributs d'origine (`psv_code`, `ins_cap_ref`, `nb_ppi_associes`, `code_ins`, `ins_pro_etat`, `siren_ars`…) ne sont pas dans les sources ; l'application Viz'eau n'en lit aucun.
+- `ppr`, `ppe` : mêmes entités et mêmes géométries, mais seul `code_pp` est conservé. Les autres attributs d'origine (`psv_code`, `ins_cap_ref`, `nb_ppi_associes`, `code_ins`, `ins_pro_etat`, `siren_ars`…) sont dans les parquets sources (voir [`captages_parquet_generator`](../../captages_parquet_generator/README.md#attributs-dorigine-des-ppr-et-ppe)), et l'application Viz'eau n'en lit aucun. Ils **ne doivent pas revenir dans le PMTiles** : le lien entre un périmètre et son point de surveillance (`psv_code`) ne doit pas être diffusé (question 12 de [`plan-captages.md`](../../plan-captages.md)).
 - `aac` : `CommandAAC` ajouté ; `ProducAAC`, `gid` et `id`, absents du GeoPackage, ont disparu.
 - `sage` : `cd_type_pe`/`lb_type_pe` et les autres champs inchangés ; « Mis en œuvre » au lieu de « Mis en ?uvre ».

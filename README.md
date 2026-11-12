@@ -18,8 +18,7 @@ Outils des **Aires d'Alimentation de Captage (AAC)**, alimentés par une source 
 
 ### [`captages_parquet_generator`](captages_parquet_generator/README.md)
 
-Génère `captages.parquet`, le fichier de recensement des captages d'eau publique sensibles, à partir de données internes au ministère de la Transition écologique. Les codes des périmètres de protection (PPI, PPR, PPE) de chaque captage sont reconstruits par intersection spatiale. Produit aussi `captages_identifiants.parquet`, la table de correspondance entre les codes d'un captage (INS, PSV, ancien et nouveau code BSS), et, à partir de l'export des captages prioritaires, `captages_prioritaires.parquet` (captages prioritaires, lu par `aac/fiches`, comme les codes BSS de `captages_new.parquet`) et `anomalies_prioritaires.csv` (lignes de l'export à corriger).
-
+Génère `captages.parquet`, le fichier de recensement des captages d'eau publique sensibles, à partir de données internes au ministère de la Transition écologique. Les codes des périmètres de protection (PPI, PPR, PPE) de chaque captage sont reconstruits par le `psv_code` des périmètres (PPR, PPE), et par intersection spatiale pour les PPI. Produit aussi `captages_identifiants.parquet`, la table de correspondance entre les codes d'un captage (INS, PSV, ancien et nouveau code BSS), et, à partir de l'export des captages prioritaires, `captages_prioritaires.parquet` (captages prioritaires, lu par `aac/fiches`, comme les codes BSS de `captages_new.parquet`) et `anomalies_prioritaires.csv` (lignes de l'export à corriger). Enfin, `captages_aac.parquet` rattache les captages aux AAC (référentiel AAC du Sandre, export des captages prioritaires, et recroisement géographique pour les AAC qu'aucune de ces tables ne couvre) : `aac/fiches` y lit les installations de chaque AAC.
 ### [`analyses_parquet_generator`](analyses_parquet_generator/README.md)
 
 Script Node.js/DuckDB qui génère `analyses_robinet.parquet` : une ligne par **résultat d'analyse réalisée sur un captage**, à partir des fichiers du contrôle sanitaire de l'eau (data.gouv.fr), enrichie avec le libellé du paramètre, les limites et références de qualité et le statut de captage prioritaire.
@@ -54,7 +53,8 @@ data/
 │               référentiels (téléchargés depuis S3 s'ils manquent), fichiers produits
 └── captages/   entrées (référentiels, export des captages prioritaires, périmètres pp*_hilbert)
                 et sorties (captages_new.parquet, captages_identifiants.parquet,
-                captages_prioritaires.parquet, anomalies_prioritaires.csv) de
-                captages_parquet_generator ; ppr/ppe_hilbert sont aussi lus par aac/zonage,
+                captages_prioritaires.parquet, anomalies_prioritaires.csv,
+                captages_aac.parquet) de captages_parquet_generator ; ppr/ppe_hilbert sont
+                aussi lus par aac/zonage, captages_aac.parquet (liens captage → AAC),
                 captages_prioritaires.parquet et captages_new.parquet (codes BSS) par aac/fiches
 ```

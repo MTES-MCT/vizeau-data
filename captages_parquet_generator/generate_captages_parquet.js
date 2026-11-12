@@ -19,6 +19,10 @@
  *   t1_ins_code_bss, t1_ins_code_bss_nouveau, t2_code_ppe, t2_code_ppr, t2_code_ppi,
  *   t1_psv_x, t1_psv_y
  *
+ * Ajoute t2_code_ppe_source, t2_code_ppr_source et t2_code_ppi_source (origine
+ * du lien captage → périmètre : `psv` ou `intersection`), absentes de
+ * l'ancien fichier.
+ *
  * Sources (dans data/captages/) :
  *   - DGS_ref_cap_06_05_2026/cap.csv   (référentiel captages, source principale)
  *   - DGS_ref_cap_06_05_2026/mca.csv   (mélanges de captages, pour t1_ins_cap_ref
@@ -26,8 +30,9 @@
  *   - DGS_ref_cap_23_02_2024/cap.csv   (une ligne par point de surveillance, PSV
  *     principaux et secondaires : seule source du lien PSV secondaire → INS)
  *   - ppe_hilbert.parquet / ppr_hilbert.parquet / ppi_hilbert.parquet
- *     (zonage des périmètres de protection, pour t2_code_ppe/ppr/ppi par
- *     intersection spatiale avec le point du captage)
+ *     (périmètres de protection, pour t2_code_ppe/ppr/ppi : par le psv_code
+ *     des PPE et PPR, par intersection spatiale avec le point du captage pour
+ *     les PPI)
  *
  * Usage : node generate_captages_parquet.js
  */
@@ -183,34 +188,6 @@ await run(`
 `)
 console.log(`  Points de captage projetés en WGS84 (${Date.now() - t}ms)`)
 
-// ─── Rattachement captage → périmètre de protection (PPE / PPR / PPI) ────────
-//
-// Reconstruit par intersection spatiale point de captage / zone, faute de
-// lien direct dans le CSV (cf. csv-to-parquet-schema-mapping.md). En cas de
-// chevauchement de zones (rare), on ne garde qu'un seul code par captage,
-// choisi arbitrairement (le plus petit), pour rester 1:1 avec le schéma
-// attendu par `generate_aac_fiches_parquet.js`.
-async function buildPpMap(table, outCol) {
-  t = Date.now()
-  await run(`
-    CREATE TABLE ${table}_map AS
-    SELECT code_installation, ${outCol}
-    FROM (
-      SELECT p.code_installation, z.code_pp AS ${outCol},
-             ROW_NUMBER() OVER (PARTITION BY p.code_installation ORDER BY z.code_pp ASC) AS rn
-      FROM cap_points p
-      JOIN read_parquet('${path(`${table}_hilbert.parquet`)}') z ON ST_Intersects(p.geom_wgs, z.geom)
-    )
-    WHERE rn = 1
-  `)
-  const [{ n }] = await q(`SELECT COUNT(*) n FROM ${table}_map`)
-  console.log(`  ${n} captages rattachés à un périmètre ${table.toUpperCase()} (${Date.now() - t}ms)`)
-}
-
-await buildPpMap('ppe', 't2_code_ppe')
-await buildPpMap('ppr', 't2_code_ppr')
-await buildPpMap('ppi', 't2_code_ppi')
-
 // ─── Table de correspondance des identifiants ─────────────────────────────────
 //
 // Selon les sources, un captage (installation SISE-Eaux, code INS) est désigné
@@ -291,6 +268,54 @@ await run(`
 `)
 await run(`COPY identifiants TO '${OUTPUT_IDENTIFIANTS}' (FORMAT PARQUET)`)
 console.log(`  Fichier écrit : ${OUTPUT_IDENTIFIANTS} (${Date.now() - t}ms)`)
+
+// ─── Rattachement captage → périmètre de protection (PPE / PPR / PPI) ────────
+//
+// Les PPE et PPR portent le code du point de surveillance (psv_code) du
+// captage pour lequel ils ont été établis : c'est le lien direct, résolu en
+// captage par les PSV, principaux et secondaires, de la table des
+// identifiants (source `psv`). Le champ ins_cap_ref des périmètres n'est pas
+// utilisé : il désigne un captage de référence du groupe qui partage le
+// périmètre, pas le captage lui-même.
+//
+// Les PPE et PPR ne sont rattachés que par ce lien direct. Un captage qu'aucun
+// psv_code ne désigne reste sans PPE/PPR : l'intersection spatiale lui
+// attribuerait le périmètre d'un captage voisin (puits du même champ captant,
+// ancien ouvrage abandonné…). Mesuré en novembre 2026 : sur 2 871 PPR
+// attribués ainsi, 3 seulement concordaient avec l'ancien captages.parquet ;
+// limitée aux périmètres sans psv_code résolu, aucun des 79 restants.
+//
+// Les PPI, sans psv_code, sont rattachés par intersection spatiale entre le
+// point du captage et le périmètre (source `intersection`) : 96 % de ces
+// liens concordent avec l'ancien fichier.
+//
+// Un captage peut avoir plusieurs périmètres (quelques dizaines de cas par le
+// psv_code, chevauchements de zones par l'intersection) : on n'en garde
+// qu'un, le plus petit code, pour rester 1:1 avec le schéma attendu par
+// `generate_aac_fiches_parquet.js`.
+async function buildPpMap(table, outCol, methode) {
+  t = Date.now()
+  const zones = `read_parquet('${path(`${table}_hilbert.parquet`)}')`
+  const liens = methode === 'psv'
+    ? `SELECT i.code_installation, z.code_pp
+       FROM ${zones} z
+       JOIN identifiants i ON i.type_code = 'PSV' AND i.code = norm_psv(z.psv_code)`
+    : `SELECT p.code_installation, z.code_pp
+       FROM cap_points p
+       JOIN ${zones} z ON ST_Intersects(p.geom_wgs, z.geom)`
+  await run(`
+    CREATE TABLE ${table}_map AS
+    SELECT code_installation, MIN(code_pp) AS ${outCol}, '${methode}' AS ${outCol}_source
+    FROM (${liens})
+    GROUP BY code_installation
+  `)
+  const [{ n }] = await q(`SELECT COUNT(*) n FROM ${table}_map`)
+  console.log(`  ${n} captages rattachés à un périmètre ${table.toUpperCase()} par ${methode} (${Date.now() - t}ms)`)
+}
+
+await buildPpMap('ppe', 't2_code_ppe', 'psv')
+await buildPpMap('ppr', 't2_code_ppr', 'psv')
+await buildPpMap('ppi', 't2_code_ppi', 'intersection')
 
 // ─── Codes BSS affichés (t1_ins_code_bss, t1_ins_code_bss_nouveau) ───────────
 //
@@ -402,6 +427,9 @@ await run(`
       ppe.t2_code_ppe                                AS t2_code_ppe,
       ppr.t2_code_ppr                                AS t2_code_ppr,
       ppi.t2_code_ppi                                AS t2_code_ppi,
+      ppe.t2_code_ppe_source                         AS t2_code_ppe_source,
+      ppr.t2_code_ppr_source                         AS t2_code_ppr_source,
+      ppi.t2_code_ppi_source                         AS t2_code_ppi_source,
       p.x_l93                                       AS t1_psv_x,
       p.y_l93                                       AS t1_psv_y
     FROM cap_raw r

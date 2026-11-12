@@ -14,7 +14,7 @@ Outils de génération des données liées aux **Aires d'Alimentation de Captage
 
 `data/aac/sage_shape.zip` — shapefile zippé (couche `sage_shape`) des périmètres des SAGE de [Gest'eau](https://www.gesteau.fr/telecharger/sage) (OIEau), utilisé seulement par `zonage`. Téléchargé depuis le WFS `https://maps.oieau.fr/ows/OIEau/gesteau` (`OUTPUTFORMAT=application/shapefile` ; l'export GPKG a des géométries invalides) : voir [`zonage/README.md`](zonage/README.md#télécharger-sage_shapezip). Non versionné.
 
-`data/captages/ppr_hilbert.parquet`, `data/captages/ppe_hilbert.parquet` — périmètres de protection rapprochée et éloignée des captages (`code_pp` et géométrie), utilisés par `zonage` (et par `captages_parquet_generator`). ⚠️ Issus de **sources institutionnelles sensibles**, et **modifiés par l'équipe Viz'eau pour masquer les PPI** ; non téléchargeables depuis une source publique : voir [`zonage/README.md`](zonage/README.md#périmètres-de-protection-ppr_hilbertparquet-ppe_hilbertparquet). Non versionnés.
+`data/captages/ppr_hilbert.parquet`, `data/captages/ppe_hilbert.parquet` — périmètres de protection rapprochée et éloignée des captages (`code_pp`, géométrie et attributs d'origine dont `psv_code`, que le PMTiles n'expose pas), utilisés par `zonage` (et par `captages_parquet_generator`). ⚠️ Issus de **sources institutionnelles sensibles**, et **modifiés par l'équipe Viz'eau pour masquer les PPI** ; non téléchargeables depuis une source publique : voir [`zonage/README.md`](zonage/README.md#périmètres-de-protection-ppr_hilbertparquet-ppe_hilbertparquet). Non versionnés.
 
 Les données locales sont rangées dans le dossier `data/` à la racine du dépôt (voir [`data-dir.mjs`](../data-dir.mjs)) :
 
@@ -32,7 +32,8 @@ data/aac/AAC.gpkg
    │                                                                  │
    │        data/s3/captages.parquet, aac_pp_zones.parquet,           │
    │        communes, RPG (S3 si absents de data/s3/) ────────────────┤
-   │        data/captages/captages_prioritaires.parquet,              │
+   │        data/captages/captages_aac.parquet,                       │
+   │        captages_prioritaires.parquet,                            │
    │        captages_new.parquet (captages_parquet_generator) ────────┤
    │                                                                  ▼
    │                                       fiches ──► output/aac.parquet ──(copie)──► data/s3/aac.parquet
@@ -72,7 +73,7 @@ npm run fiches
 Prérequis propres à chaque étape :
 
 - `zonage` : `ogr2ogr` (avec le pilote Parquet) et `tippecanoe` dans le `PATH`, `data/aac/sage_shape.zip` et les périmètres `data/captages/ppr_hilbert.parquet`, `ppe_hilbert.parquet`
-- `fiches` : fichier `aac/.env` avec les accès S3 (voir `aac/.env.sample`), et `data/captages/captages_prioritaires.parquet` (flag `prioritaire` des installations) et `captages_new.parquet` (codes BSS des installations) produits par [`captages_parquet_generator`](../captages_parquet_generator/README.md#captages_prioritairesparquet)
+- `fiches` : fichier `aac/.env` avec les accès S3 (voir `aac/.env.sample`), et `data/captages/captages_aac.parquet` (installations de chaque AAC), `captages_prioritaires.parquet` (flag `prioritaire` des installations) et `captages_new.parquet` (codes BSS des installations) produits par [`captages_parquet_generator`](../captages_parquet_generator/README.md#captages_aacparquet)
 
 ## Upload sur S3
 
