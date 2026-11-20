@@ -4,6 +4,7 @@
     "geometries": "node geometries/generate_aac_geometries_parquet.js",
     "zonage": "node zonage/generate_zonage_pmtiles.js",
     "fiches": "node --env-file=.env fiches/generate_aac_fiches_parquet.js",
+    "valider": "node --env-file=.env fiches/valider_aac_fiches.js",
     "all": "node run_all.js",
     "upload": "node --env-file=.env upload.js"
   },

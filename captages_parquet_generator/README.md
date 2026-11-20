@@ -187,7 +187,7 @@ sandre_prl (PTP → BSS) ───┼──► 1. sandre : PTP de l'AAC → BSS 
 captages_identifiants ────┘       et OPR auxquels le Sandre donne l'AAC       │ liens sûrs, sans
 captages_prioritaires ─────────► 2. export : code_aac de l'OPR (ou porteur) ──┤ contrôle de distance
                                                                                │
-                                  seulement pour les AAC sans lien sûr, ≤ 2,5 km :
+                                  pour toutes les AAC, ≤ 2,5 km :
 captages_new (points) ─────────► 3. point : point du captage dans l'AAC ─────┤ recroisement
 captages_new (t2_code_pp*) ──┬─► 4. perimetre : PPR/PPI du captage ≥ 40 % ───┤ géographique
 ppr/ppi_hilbert (géométries) ┘      dans l'AAC                                 ▼
@@ -472,6 +472,7 @@ surtout). En novembre 2026 : 1 700 lignes, dont 204 sans captage.
 | `code_aac_export`   | AAC de l'OPR dans l'export, ou celle de son porteur pour un rattaché, même quand le Sandre en donne une autre |
 | `code_installation` | Code INS du captage (`t1_code_ins`)                                                             |
 | `resolu_par`        | Types de code de l'OPR qui ont mené à ce captage (`INS`, `PSV`, `PTP_BSS_ID`, `PTP_BSS_INDICE` pour les codes BSS de ses PTP, `BSS_ID`, `BSS_INDICE` pour ceux de l'OPR) |
+| `nature_eau`        | Natures de l'eau de l'OPR (liste : `ESO` souterraine, `ESU` de surface), d'après le champ `origine` de l'export et le type de ses PTP (`TypePointPrelevement` de la couche Sandre : `SOUT` → ESO, `CONT` et `LIT` → ESU), ceux que cite l'export comme ceux que la couche connecte à l'OPR ; vide si aucune n'est connue. Sert à repérer les AAC de prise d'eau de surface (`captages_aac.parquet`). En novembre 2026 : 1 405 OPR en ESO, 73 en ESU, 61 sans nature, aucun mixte |
 
 **Règle de résolution.**
 - `code_ins`, `code_psv`, `code_bss` et `code_ptp_sandre` sont des listes
@@ -577,44 +578,40 @@ Produit par `generate_captages_aac.js` (`npm run aac`). Une ligne par couple
 | ------------------- | ----------------------------------------------------------------------------------------------- |
 | `cdaac`             | Code de l'AAC dans `AAC.gpkg`                                                                   |
 | `code_installation` | Code INS du captage (`t1_code_ins` de `captages_new.parquet`)                                   |
-| `source`            | Source du lien, la plus sûre si plusieurs le donnent : `sandre`, `export`, `point`, `perimetre` ou `proximite` (voir ci-dessous) |
-| `lien_sur`          | `true` pour un lien donné par une table (`sandre`, `export`), `false` pour un recroisement géographique (`point`, `perimetre`, `proximite`) |
+| `source`            | Source du lien, la plus sûre si plusieurs le donnent : `sandre`, `export`, `champ_captant`, `point`, `perimetre` ou `proximite` (voir ci-dessous) |
+| `lien_sur`          | `true` pour un lien donné par une table (`sandre`, `export`), `false` pour un recroisement (`champ_captant`, `point`, `perimetre`, `proximite`) |
 | `distance_m`        | Distance entre le point du captage (`captages_new.parquet`) et l'AAC, en mètres : 0 dans l'AAC, vide sans point |
 | `alerte`            | `captage_eloigne_aac` pour un lien sûr à plus de 2,5 km de l'AAC, `captage_dans_autre_aac` pour un lien dont le captage est dans une autre AAC (voir ci-dessous), les deux séparées par `, ` ; vide sinon. Le lien est gardé dans tous les cas |
 | `autres_aac`        | Pour `captage_dans_autre_aac` : codes des autres AAC où est le captage (liste) ; vide sinon |
-| `detail`            | Ce qui a donné le lien : PTP de l'AAC (`PTP PTP000000000170307`), OPR de l'export (`OPR OPR0000000709`), périmètre et part de sa surface dans l'AAC (`PPR 010_R_0067 (86 %)`), `seul captage à moins de 100 m` pour `proximite` |
+| `detail`            | Ce qui a donné le lien : PTP de l'AAC (`PTP PTP000000000170307`), OPR de l'export (`OPR OPR0000000709`), périmètre et part de sa surface dans l'AAC (`PPR 010_R_0067 (86 %)`), PPR partagé et captage d'une table qui l'a (`PPR 035_R_0034 de 035000368`) pour `champ_captant`, `seul captage à moins de 100 m` pour `proximite` |
 
-```
-                  ┌───────────── rattachement captage → AAC ─────────────┐
-                  │ liens sûrs (tables), sans contrôle de distance :      │
-AAC.gpkg (PTP) ──►│ 1. sandre    PTP de l'AAC → code BSS → captage, et    │
-                  │              captages des OPR auxquels le Sandre      │
-                  │              donne l'AAC                              │
-export OPR ──────►│ 2. export    code_aac de l'OPR (ou de son porteur)    │
-                  │              quand le Sandre ne donne pas d'AAC       │
-                  │                                                       │
-                  │ recroisement géographique, seulement pour les AAC     │
-                  │ sans lien sûr, captages à 2,5 km au plus :            │
-captages_new ────►│ 3. point     point du captage dans l'AAC              │
-ppr/ppi_hilbert ─►│ 4. perimetre PPR ou PPI du captage dont 40 % au moins │
-                  │              de la surface est dans l'AAC (90 % pour  │
-                  │              un captage sans point) ; pas les PPE     │
-                  │                                                       │
-                  │ dernier recours, AAC encore sans aucun lien :         │
-captages_new ────►│ 5. proximite seul captage à 100 m au plus du bord     │
-                  │              de l'AAC                                 │
-                  │                                                       │
-                  │ alertes, sur des liens gardés :                       │
-                  │   captage_eloigne_aac     lien sûr à plus de 2,5 km   │
-                  │   captage_dans_autre_aac  captage à plus de 100 m de  │
-                  │                           l'AAC, dans une autre AAC   │
-                  └───────────────────────────┬───────────────────────────┘
-                                              ▼
-                                   captages_aac.parquet ──► aac/fiches
+```mermaid
+flowchart TD
+    GPKG["AAC.gpkg (PTP)"] --> S1
+    EXP["export OPR"] --> S2
+    CAP["captages_new"] --> CC & G3 & G5
+    PP["ppr/ppi_hilbert"] --> G4
+    subgraph SURS["Liens sûrs (tables), sans contrôle de distance"]
+        S1["1. sandre : PTP de l'AAC → code BSS → captage, et captages des OPR auxquels le Sandre donne l'AAC"]
+        S2["2. export : code_aac de l'OPR (ou de son porteur) quand le Sandre ne donne pas d'AAC"]
+    end
+    SURS --> CC["champ_captant : captages du même PPR qu'un captage des liens sûrs (2,5 km au plus)"]
+    subgraph GEO["Recroisement géographique, pour toutes les AAC, captages à 2,5 km au plus"]
+        G3["3. point : point du captage dans l'AAC"]
+        G4["4. perimetre : PPR ou PPI dont 40 % au moins de la surface est dans l'AAC (90 % sans point) ; pas les PPE"]
+        ESU["AAC de prise d'eau de surface : captages en eau de surface seulement"]
+        G3 --> ESU
+        G4 --> ESU
+    end
+    ESU --> G5["5. proximite : dernier recours pour une AAC encore sans lien, seul captage à 100 m au plus du bord"]
+    CC & S1 & S2 & ESU & G5 --> AL["Alertes, sur des liens gardés : captage_eloigne_aac (lien sûr à plus de 2,5 km), captage_dans_autre_aac (captage à plus de 100 m de l'AAC, dans une autre AAC)"]
+    AL --> OUT["captages_aac.parquet"] --> FICHES["aac/fiches"]
 ```
 
-**Liens sûrs.** Quand une table donne les captages d'une AAC, on la respecte
-sans regarder la géométrie (question 4 de `plan-captages.md`) :
+**Liens sûrs.** Les captages qu'une table donne à une AAC y sont rattachés sans
+regarder la géométrie (question 4 de `plan-captages.md`). Ces tables ne sont pas
+exhaustives : elles s'ajoutent au recroisement géographique, elles ne le
+remplacent pas (voir plus bas).
 
 - `sandre` : chaque PTP du champ `PTP` d'`AAC.gpkg` est résolu en captage par
   son code BSS (`CdNationalPTE` de la couche des PTP), cherché dans
@@ -634,10 +631,35 @@ sans regarder la géométrie (question 4 de `plan-captages.md`) :
   part dans `aac.parquet` (question 3). Les `captages_rattaches` d'une
   installation restent les membres d'un même mélange.
 
-**Recroisement géographique.** Il ne sert que pour les AAC qui n'ont aucun
-lien sûr : une AAC qui en a un ne reçoit aucun lien géographique. Une AAC dont
-les PTP ou les OPR ne se résolvent en aucun captage (PTP d'eaux de surface,
-OPR sans captage) n'a pas de lien sûr : elle passe par la géographie.
+**Même champ captant (`champ_captant`).** Les tables ne citent souvent qu'un
+ouvrage d'un champ captant : les autres puits, protégés par le même PPR,
+manquaient sur la fiche de l'AAC (point 4 de `bilan.md`, accepté par l'experte
+métier le 16 novembre 2026). Pour une AAC qui a des liens sûrs, les captages qui
+partagent le PPR (`t2_code_ppr` de `captages_new.parquet`) d'un captage de ces
+liens y sont rattachés, comme lien non sûr (`lien_sur` à `false`), affiché comme
+un recroisement. Exemple : AAC 1694 La Couyère, dont l'export cite le puits n°1,
+suspendu ; les puits n°2 et n°3, actifs, ont le même PPR `035_R_0034`.
+
+- Seul le PPR compte, pas le mélange (`t1_ins_cap_ref`), qui peut réunir des
+  ressources éloignées (AAC 926 → `077000641` Congis-sur-Thérouanne 1, à 86 km
+  du captage cité).
+- Même contrôle de distance que le recroisement géographique : pas de lien
+  au-delà de 2,5 km de l'AAC. Les 9 liens ainsi écartés sont des PPR partagés
+  par des captages distants de 16 à 85 km (codes PPR en double). Un captage
+  sans point est gardé : le PPR partagé suffit (3 liens).
+- Un captage déjà rattaché à une autre AAC l'est aussi à celle-ci ; l'alerte
+  `captage_dans_autre_aac` s'applique comme aux autres liens (6 liens).
+
+**Recroisement géographique.** Il s'applique à toutes les AAC, qu'une table leur
+donne des captages ou non. Le Sandre et l'export ne citent que les points pour
+lesquels l'AAC a été délimitée, ou ses captages prioritaires : 549 des 760 AAC
+qu'ils couvrent n'ont qu'un captage cité. Jusqu'au 16 novembre 2026, une AAC
+qui avait un lien sûr ne recevait aucun lien géographique (lecture stricte de
+la question 4). Cela retirait 2 421 des 7 378 installations de la version
+d'octobre 2026, dont des captages actifs d'eau potable situés dans l'AAC :
+l'AAC 1569 Le Bain ne gardait que BAINS ANCIEN, suspendu, cité par l'export,
+et perdait BAINS et MOLLARD CHEVAL. Les liens géographiques restent distincts
+des liens sûrs (`lien_sur` à `false`, affichés comme un recroisement).
 
 - `point` : le point du captage (`t1_psv_x`/`t1_psv_y` de
   `captages_new.parquet`, référentiel DGS 2026) est dans l'AAC.
@@ -654,7 +676,30 @@ OPR sans captage) n'a pas de lien sûr : elle passe par la géographie.
   mais le captage est forcément proche. Exemple : l'AAC 840
   (Villemaur-sur-Vanne), dont le PPR `010_R_0177`, entièrement dans l'AAC, est
   celui du captage `010000448`, sans point. `distance_m` est alors vide.
-- `proximite` : dernier recours pour une AAC sans lien sûr que ni `point` ni
+- AAC de prise d'eau de surface (point 1 de `bilan.md`, décidé le 16 novembre
+  2026) : l'export cite l'ouvrage d'une prise en rivière ou en retenue, mais ne
+  le résout presque jamais en captage (pas de code BSS pour une eau de
+  surface). L'AAC, qui couvre tout un bassin versant, recevait par `point` et
+  `perimetre` tous les captages du bassin : 296 pour l'AAC 1549 Prise de
+  Maquens, dont des sources à 40 km de la prise. Pour ces AAC, seuls les liens
+  vers des captages en eau de surface (`t1_ins_nat_code` `ESU`) sont gardés.
+  Des prises d'autres réseaux, en amont, restent rattachées (Maquens : 10
+  prises, dont celle du lac d'Estany Gros). Une AAC de prise d'eau de surface
+  est une AAC :
+  - dont tous les points de prélèvement connus sont en eau de surface :
+    `nature_eau` des OPR de l'export qui lui sont donnés
+    (`captages_prioritaires.parquet`) et type des PTP que lui donne le
+    référentiel AAC du Sandre ;
+  - ou citée dans `AAC_PRISES_EAU_SURFACE`, en tête du script, faute de point
+    connu : 1600 Prise de Mathay et 490 AAC de l'Orne (prise d'eau).
+
+  Ses liens sûrs sont gardés, quelle que soit la nature de l'eau. Si elle n'a
+  aucun lien sûr et qu'aucun captage en eau de surface ne la rattache, ses
+  liens géographiques sont gardés tels quels, pour ne pas la vider (4 AAC en
+  novembre 2026) : 4326 et 5457, dont la prise manque au
+  référentiel, et 5966 et 5967 (Puits Bannie), dont le PTP est de type `CONT`
+  mais le seul captage un puits.
+- `proximite` : dernier recours pour une AAC qu'aucune table ni `point` ni
   `perimetre` ne rattachent. Si un seul captage a son point à 100 m au plus du
   bord de l'AAC (`DISTANCE_MAX_PROXIMITE_M`), il y est rattaché ; avec
   plusieurs captages à cette distance, l'AAC reste sans lien. Cas typique :
@@ -702,8 +747,8 @@ Les seuils sont des constantes, faciles à faire varier :
 `DISTANCE_MAX_AAC_KM`, `DISTANCE_MIN_AUTRE_AAC_M` et `PART_MAX_AAC_DANS_AUTRE`
 dans `regles_aac.js` (partagées avec `generate_prioritaires.js`),
 `PART_MIN_PP_DANS_AAC`, `TYPES_PP_DANS_AAC`,
-`PART_MIN_PP_SANS_POINT` et `DISTANCE_MAX_PROXIMITE_M` en tête de
-`generate_captages_aac.js`.
+`PART_MIN_PP_SANS_POINT`, `DISTANCE_MAX_PROXIMITE_M` et
+`AAC_PRISES_EAU_SURFACE` en tête de `generate_captages_aac.js`.
 
 ⚠️ L'ancien `aac_pp_zones.parquet`, dont `aac/fiches` lisait les listes de
 codes PP, ne retenait pas les périmètres majoritairement dans l'AAC, comme le
@@ -796,26 +841,33 @@ avec 10 km :
   (11 au lieu de 6 ; 1459, 1624, 1703 deux fois, 4421), 1 lien `perimetre`
   est écarté (142 → `078000308`, l'AAC 142 garde ses 6 autres captages).
 
-**Résultats observés (novembre 2026).**
+**Résultats observés (16 novembre 2026).**
 
-| `source`    | Liens | AAC | Captages | `captage_eloigne_aac` | `captage_dans_autre_aac` |
-| ----------- | ----- | --- | -------- | --------------------- | ------------------------ |
-| `sandre`    | 274   | 201 | 273      | 1                     | 0                        |
-| `export`    | 962   | 562 | 961      | 10                    | 14                       |
-| `point`     | 4 060 | 810 | 3 759    |                       | 0                        |
-| `perimetre` | 210   | 120 | 194      |                       | 14                       |
-| `proximite` | 21    | 21  | 21       |                       | 0                        |
+| `source`        | Liens | AAC   | Captages | `captage_eloigne_aac` | `captage_dans_autre_aac` |
+| --------------- | ----- | ----- | -------- | --------------------- | ------------------------ |
+| `sandre`        | 274   | 201   | 273      | 1                     | 0                        |
+| `export`        | 962   | 562   | 961      | 10                    | 14                       |
+| `champ_captant` | 380   | 142   | 380      |                       | 6                        |
+| `point`         | 5 007 | 1 136 | 4 184    |                       | 0                        |
+| `perimetre`     | 246   | 156   | 226      |                       | 19                       |
+| `proximite`     | 21    | 21    | 21       |                       | 0                        |
 
-- 5 527 liens, 1 638 AAC sur 1 681 ; 43 AAC n'ont aucun captage (65 avant
+- 6 890 liens, 1 638 AAC sur 1 681 ; 43 AAC n'ont aucun captage (65 avant
   les liens sans point et `proximite`).
+- Évolution des règles du 16 novembre 2026 : 5 527 liens avant ; 4 535 avec
+  les prises d'eau de surface et le même champ captant ; 6 890 une fois le
+  recroisement géographique étendu aux AAC qui ont des liens sûrs (332 de ces
+  AAC reçoivent des liens `point`, 37 des liens `perimetre`).
+- Prises d'eau de surface : 57 AAC, dont 2 par `AAC_PRISES_EAU_SURFACE` ;
+  1 374 captages sur 1 484 écartés ; 4 AAC sans lien sûr gardent leurs liens
+  faute de captage en eau de surface (voir plus haut).
 - Liens sûrs : 760 AAC. Sur les 274 liens `sandre`, 238 viennent du code BSS
   des PTP ; les autres viennent seulement des OPR de l'export.
 - Les 1 148 couples (AAC, captage) que `captages_prioritaires.parquet` donne
   pour une AAC d'`AAC.gpkg` sont tous dans la table.
-- Recroisement géographique : 921 AAC sans lien sûr ; 37 liens écartés à plus
-  de 2,5 km, aucun faute de point. 4 liens `perimetre` vers un captage sans
-  point sont gardés (PPR à 90 % au moins dans l'AAC), tous dans l'Aube ; un
-  seul concerne une AAC qui n'avait aucun lien (840).
+- Recroisement géographique : 36 liens écartés à plus de 2,5 km (et 9 liens
+  `champ_captant`), aucun faute de point. 6 liens `perimetre` vers un captage
+  sans point sont gardés (PPR à 90 % au moins dans l'AAC).
 - `proximite` : 21 AAC rattachées, toutes à un captage à moins de 81 m.
   6 AAC ont plusieurs captages à moins de 100 m et restent sans lien.
 

@@ -59,6 +59,28 @@ npm run fiches
 node --env-file=.env fiches/generate_aac_fiches_parquet.js
 ```
 
+### Validation avant envoi sur S3
+
+```bash
+# depuis aac/, après npm run fiches et avant npm run upload
+npm run valider
+# ou, pour comparer d'autres fichiers :
+node --env-file=.env fiches/valider_aac_fiches.js <aac.parquet après> <aac.parquet avant>
+```
+
+Par défaut, `fiches/output/aac.parquet` est comparé à la version publiée, lue sur S3 (`s3://<S3_BUCKET>/<S3_PREFIX>/aac.parquet`, là où `npm run upload` l'envoie). La comparaison ne se fait pas avec `data/s3/aac.parquet` : `npm run fiches` y copie sa sortie, si bien que les deux fichiers seraient identiques.
+
+- **Contrôles bloquants** (code de sortie 1 en cas d'échec) :
+  - une ligne par AAC, les mêmes AAC qu'avant, et `nb_installations` égal au nombre d'installations ;
+  - les champs de rattachement des installations sont présents et cohérents : source connue, `recroisement_geographique` conforme à la source, `a_part` et son motif conformes à l'état et à l'usage ;
+  - chaque lien de `captages_aac.parquet` et chaque captage prioritaire de son AAC se retrouve dans les installations, et chaque AAC citée par l'export est prioritaire.
+- **À relire** :
+  - les totaux avant et après ;
+  - les AAC dont le nombre de captages change le plus ;
+  - les AAC qui perdent ou gagnent toutes leurs installations ou le flag prioritaire ;
+  - les installations de quelques AAC à revoir à la main (`AAC_A_VERIFIER`).
+- Le détail par AAC est écrit dans `fiches/output/validation_aac.csv`.
+
 Pour publier `output/aac.parquet` sur S3 : `npm run upload -- fiches` depuis `aac/` (voir [`../README.md`](../README.md#upload-sur-s3)).
 
 ## Fichiers source attendus sur S3
@@ -112,14 +134,15 @@ Pour repartir de zéro : supprimer les sources de `data/s3/` et/ou `data/aac/cac
 Fichier `aac.parquet` écrit dans `output/` (ZSTD), contenant une ligne par AAC, triée par `code` (ordre numérique, codes non numériques en fin), avec les champs suivants :
 
 - `nom`, `code`, `prioritaire`, `date_creation`, `date_maj`, `bbox`, `surface`. `prioritaire` : l'AAC est citée par l'export des captages prioritaires (`code_aac` d'un ouvrage de `data/captages/captages_prioritaires.parquet`, même sans captage identifié), ou l'une de ses installations est prioritaire
-- `nb_captages_actifs`, `nb_installations`
+- `nb_captages_actifs`, `nb_installations`. `nb_captages_actifs` compte les captages actifs rattachés à l'AAC, sauf ceux qu'un recroisement rattache et qui sont à part (autre usage que l'eau potable, ou usage AEP abandonné : voir `a_part` ci-dessous). `nb_installations` compte toutes les installations, à part comprises
 - `surface_agricole`, `nb_parcelles`
 - `communes` — liste des communes avec surface et répartition
 - `surface_agricole_utile` — SAU par groupe de culture (nb parcelles, surface, % SAU)
 - `surface_agricole_ppe` / `surface_agricole_ppr` — idem dans les zones de protection
 - `surface_agricole_bio` — nb parcelles, surface et part bio
 - `installations` — installations dont un captage est rattaché à l'AAC dans `data/captages/captages_aac.parquet` : captage de référence (dont le code PPE de sa zone de protection), captages rattachés (membres d'un même mélange), statut prioritaire (`prioritaire` : l'un des captages de l'installation est prioritaire pour cette AAC, c'est-à-dire que `data/captages/captages_prioritaires.parquet` lui donne cette AAC, ou aucune AAC connue d'`AAC.gpkg`), codes BSS de l'installation et des captages rattachés (`code_bss` : ancien code, indice et désignation `06992X0035/P1` ; `code_bss_nouveau` : nouveau code `BSS001SEGK`), repris de `data/captages/captages_new.parquet`, et source du lien avec l'AAC :
-  - `source_rattachement` : `sandre` (référentiel AAC du Sandre), `export` (export des captages prioritaires), `point` (point du captage dans l'AAC), `perimetre` (périmètre de protection rapprochée ou immédiate, PPR ou PPI, dont 40 % au moins de la surface est dans l'AAC) ou `proximite` (seul captage à 100 m au plus du bord d'une AAC qu'aucune autre source ne rattache) ; la plus sûre parmi les captages de l'installation, dans cet ordre ;
-  - `recroisement_geographique` : `true` quand le lien n'est que géographique (`point`, `perimetre` ou `proximite`), à afficher comme tel ; `false` quand une table le donne (`sandre` ou `export`).
+  - `source_rattachement` : `sandre` (référentiel AAC du Sandre), `export` (export des captages prioritaires), `champ_captant` (même PPR qu'un captage donné par l'une de ces deux tables), `point` (point du captage dans l'AAC), `perimetre` (périmètre de protection rapprochée ou immédiate, PPR ou PPI, dont 40 % au moins de la surface est dans l'AAC) ou `proximite` (seul captage à 100 m au plus du bord d'une AAC qu'aucune autre source ne rattache) ; la plus sûre parmi les captages de l'installation, dans cet ordre ;
+  - `recroisement_geographique` : `true` quand le lien est un recroisement (`champ_captant`, `point`, `perimetre` ou `proximite`), à afficher comme tel ; `false` quand une table le donne (`sandre` ou `export`) ;
+  - `a_part`, `motif_a_part`, `libelle_a_part` : pour une installation rattachée par recroisement qui ne sert pas à l'eau potable, ou plus (point 3 de `bilan.md`), à afficher à part de la liste principale (« autres captages dans l'AAC »). `motif_a_part` vaut `autre_usage` (usage autre que l'adduction collective, publique ou privée : agroalimentaire, eau conditionnée, thermalisme ; testé en premier) ou `abandon_aep` (état « ABANDONNÉ … » ou usage « Abandon de l'usage AEP »). `libelle_a_part` est le texte à afficher : « Abandonné pour l'eau potable », « Autre usage : activité agroalimentaire »… Les trois champs sont absents sinon. Un captage suspendu ou en projet n'est pas mis à part, ni un captage donné par une table, même abandonné. Une AAC dont toutes les installations sont à part reste une AAC avec captages.
   - L'installation est décrite (code, nom, commune, état…) par le captage de référence de son mélange s'il est rattaché à l'AAC, sinon par un autre membre rattaché : le plus sûrement rattaché, puis actif, puis le plus petit code. Code et attributs sont toujours ceux d'un même captage.
 - `cultures_evolution` — objet `{ repartition }`, où `repartition` contient les années `2020..2024` et, pour chaque groupe, `{ surface_ha, nb_parcelles }`

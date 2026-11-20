@@ -8,7 +8,8 @@
  *   - captages_prioritaires.parquet  une ligne par OPR, AAC et captage (captage
  *     vide pour un OPR non résolu) : sert à poser le flag `prioritaire` des AAC
  *     et des installations dans aac/fiches, et donne à generate_captages_aac.js
- *     les liens captage → AAC de l'export
+ *     les liens captage → AAC de l'export et la nature de l'eau (ESO, ESU) de
+ *     chaque OPR
  *   - anomalies_prioritaires.csv     lignes de l'export non résolues ou
  *     incohérentes, à renvoyer au producteur de l'export
  *
@@ -29,7 +30,7 @@ import { DuckDBInstance } from '@duckdb/node-api'
 import { existsSync } from 'fs'
 import { dataPath } from '../data-dir.mjs'
 import { NORMALISATION_MACROS } from './normalisation.js'
-import { DISTANCE_MAX_AAC_M, aacSandreSql, autresAacSql } from './regles_aac.js'
+import { DISTANCE_MAX_AAC_M, aacSandreSql, autresAacSql, natureEauPtpSql } from './regles_aac.js'
 
 const path = (name) => dataPath('captages', name)
 
@@ -82,6 +83,7 @@ await run(`
   CREATE TABLE opr AS
   SELECT e.code_opr, e.statut_opr, NULLIF(trim(e.opr_rattach), '') AS opr_rattach, e.nom_sandre,
          e.code_ins, e.code_psv, e.code_bss, e.code_ptp_sandre, e.coord_x_wgs84, e.coord_y_wgs84,
+         NULLIF(trim(e.origine), '') AS origine,
          NULLIF(trim(e.code_aac), '') AS code_aac_propre,
          COALESCE(NULLIF(trim(e.code_aac), ''), NULLIF(trim(p.code_aac), '')) AS code_aac_export,
          CASE
@@ -101,12 +103,20 @@ console.log(`  ${nbOpr} OPR chargés depuis l'export (${Date.now() - t}ms)`)
 // point d'eau d'un PTP. Un PTP peut avoir plusieurs lignes, une par OPR auquel
 // il a été connecté (`DateDebConnOuvPoint`/`DateFinConnOuvPoint`) : elles sont
 // toutes gardées, le code BSS ne dépendant que du PTP.
+//
+// Nature de l'eau de chaque OPR (`nature_eau`) : ensemble des natures (`ESO`,
+// `ESU`) que donnent le champ `origine` de l'export et le type des PTP de
+// l'OPR, ceux que cite l'export (`code_ptp_sandre`) comme ceux que la couche
+// Sandre connecte à l'OPR. Vide si aucune n'est connue. generate_captages_aac.js
+// s'en sert pour repérer les AAC de prise d'eau de surface (point 1 de
+// bilan.md).
 
 t = Date.now()
 await run(`
   CREATE TABLE ptp_sandre AS
   SELECT DISTINCT CdPointPrelevement AS code_ptp, CdOuvragePrel AS code_opr,
-         NULLIF(trim(CdNationalPTE), '') AS code_pte
+         NULLIF(trim(CdNationalPTE), '') AS code_pte,
+         ${natureEauPtpSql('TypePointPrelevement')} AS nature_eau
   FROM read_csv('${PTP_CSV}', header=true, all_varchar=true)
 `)
 await run(`
@@ -114,6 +124,19 @@ await run(`
   SELECT DISTINCT o.code_opr, trim(p.code_ptp) AS code_ptp
   FROM opr o, unnest(string_split(o.code_ptp_sandre, '|')) AS p(code_ptp)
   WHERE trim(p.code_ptp) <> ''
+`)
+await run(`
+  CREATE TABLE opr_nature AS
+  SELECT code_opr, list_sort(list_distinct(list(nature_eau))) AS nature_eau
+  FROM (
+    SELECT code_opr, origine AS nature_eau FROM opr
+    UNION ALL
+    SELECT p.code_opr, s.nature_eau FROM ptp_opr p JOIN ptp_sandre s USING (code_ptp)
+    UNION ALL
+    SELECT code_opr, nature_eau FROM ptp_sandre WHERE code_opr IN (SELECT code_opr FROM opr)
+  )
+  WHERE nature_eau IS NOT NULL
+  GROUP BY code_opr
 `)
 const [ptpStats] = await q(`
   SELECT COUNT(DISTINCT p.code_ptp) AS ptp,
@@ -259,10 +282,11 @@ await run(`
 await run(`
   COPY (
     SELECT o.code_opr, o.statut_opr, o.opr_rattach, a.code_aac, a.code_aac_source, o.code_aac_export,
-           l.code_installation, l.resolu_par
+           l.code_installation, l.resolu_par, COALESCE(n.nature_eau, []::VARCHAR[]) AS nature_eau
     FROM opr o
     LEFT JOIN liens l USING (code_opr)
     LEFT JOIN opr_aac a USING (code_opr)
+    LEFT JOIN opr_nature n USING (code_opr)
     ORDER BY o.code_opr, a.code_aac, l.code_installation
   ) TO '${OUTPUT}' (FORMAT PARQUET)
 `)

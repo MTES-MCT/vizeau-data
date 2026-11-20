@@ -46,6 +46,13 @@ export const DISTANCE_MAX_AAC_M = DISTANCE_MAX_AAC_KM * 1000
 export const DISTANCE_MIN_AUTRE_AAC_M = 100
 export const PART_MAX_AAC_DANS_AUTRE = 0.5
 
+// Nature de l'eau (`ESO` souterraine, `ESU` de surface, comme le champ
+// `origine` de l'export et `t1_ins_nat_code` des captages) d'un point de
+// prélèvement du Sandre, d'après son `TypePointPrelevement` : SOUT (eau
+// souterraine), CONT (eau continentale de surface), LIT (eau littorale).
+export const natureEauPtpSql = (typePtp) =>
+  `CASE ${typePtp} WHEN 'SOUT' THEN 'ESO' WHEN 'CONT' THEN 'ESU' WHEN 'LIT' THEN 'ESU' END`
+
 // Crée la table `table` : une ligne par couple (AAC, captage) de la requête
 // `couples` (colonnes cdaac, code_installation, point_l93) dont le captage est
 // dans une autre AAC, au sens ci-dessus. Colonnes : cdaac, code_installation,

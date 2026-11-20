@@ -214,7 +214,45 @@ const GROUPES_CULTURES_EVOLUTION = {
 
 // Sources des liens captage → AAC de captages_aac.parquet, de la plus sûre à
 // la moins sûre. Une installation prend la plus sûre de ses captages.
-const RANG_SOURCE = { sandre: 1, export: 2, point: 3, perimetre: 4, proximite: 5 }
+const RANG_SOURCE = { sandre: 1, export: 2, champ_captant: 3, point: 4, perimetre: 5, proximite: 6 }
+
+// Usages d'eau potable (`t1_ins_usage_lib`). Les autres usages (agroalimentaire,
+// eau conditionnée, thermalisme) et l'abandon de l'usage AEP mettent à part une
+// installation rattachée par recroisement (motifAPart).
+const USAGES_EAU_POTABLE = new Set([
+  'ADDUCTION COLLECTIVE PUBLIQUE',
+  'ADDUCTION COLLECTIVE PRIVEE',
+  "Projet concernant l'AEP",
+])
+const LIBELLES_AUTRE_USAGE = {
+  'ACTIVITE AGRO ALIMENTAIRE': 'activité agroalimentaire',
+  'EAU CONDITIONNEE': 'eau conditionnée',
+  'USAGE THERMAL': 'usage thermal',
+  "Abandon d'un usage autre que AEP": "usage autre que l'eau potable, abandonné",
+}
+
+// Installation rattachée par recroisement (lien non sûr) à afficher à part de
+// la liste principale, avec son motif (point 3 de bilan.md) : captage qui ne
+// sert pas à l'eau potable (`autre_usage`, l'usage est précisé), ou captage
+// d'eau potable abandonné (`abandon_aep` : état « ABANDONNÉ … » ou usage
+// « Abandon de l'usage AEP »). Un captage suspendu ou en projet reste dans la
+// liste principale. Les liens des tables (Sandre, export) ne sont jamais mis à
+// part : l'export cite des captages abandonnés depuis, ce qui est normal. Une
+// AAC dont toutes les installations sont à part reste une AAC avec captages :
+// l'enjeu peut être de reconquérir la ressource, pas seulement le captage.
+function motifAPart(c) {
+  const usage = c.t1_ins_usage_lib
+  if (usage && usage !== "Abandon de l'usage AEP" && !USAGES_EAU_POTABLE.has(usage)) {
+    return {
+      motif_a_part: 'autre_usage',
+      libelle_a_part: `Autre usage : ${LIBELLES_AUTRE_USAGE[usage] ?? usage.toLowerCase()}`,
+    }
+  }
+  if (usage === "Abandon de l'usage AEP" || c.t1_ins_etat_lib?.toUpperCase().startsWith('ABANDONN')) {
+    return { motif_a_part: 'abandon_aep', libelle_a_part: "Abandonné pour l'eau potable" }
+  }
+  return null
+}
 
 // Captage qui représente une installation quand le captage de référence de son
 // mélange n'est pas rattaché à l'AAC : le plus sûrement rattaché, puis un
@@ -268,11 +306,17 @@ function buildInstallations(captages, estPrioritaire) {
       if ([...membres.keys()].some(estPrioritaire)) entry.prioritaire = true
 
       // Lien de l'installation à l'AAC : sûr (référentiel AAC du Sandre ou
-      // export des captages prioritaires) ou recroisement géographique, à
-      // afficher comme tel.
+      // export des captages prioritaires) ou recroisement (géographique, ou
+      // même champ captant qu'un captage d'une table), à afficher comme tel.
       const sources = [...membres.values()].map((m) => m.source_rattachement)
       entry.source_rattachement = sources.sort((a, b) => RANG_SOURCE[a] - RANG_SOURCE[b])[0]
       entry.recroisement_geographique = ![...membres.values()].some((m) => m.lien_sur)
+
+      // Installation abandonnée ou hors eau potable, rattachée par recroisement :
+      // à afficher à part (« autres captages dans l'AAC »), d'après l'état et
+      // l'usage du captage qui décrit l'installation.
+      const motif = entry.recroisement_geographique ? motifAPart(ref) : null
+      if (motif) Object.assign(entry, { a_part: true, ...motif })
 
       const rattaches = [...membres.values()]
         .filter((m) => m.t1_code_ins !== ref.t1_code_ins)
@@ -369,9 +413,11 @@ t = Date.now()
 // Les liens viennent de captages_aac.parquet, produit par
 // captages_parquet_generator (generate_captages_aac.js), où sont toutes les
 // règles métier : référentiel AAC du Sandre, puis export des captages
-// prioritaires (liens sûrs), et, pour les seules AAC sans lien sûr, point du
-// captage ou PPR/PPI à 40 % au moins dans l'AAC (recroisement
-// géographique, à 2,5 km au plus), et en dernier recours le seul captage à
+// prioritaires (liens sûrs), captages du même PPR qu'un captage de ces tables
+// (`champ_captant`), et, pour toutes les AAC (les tables ne sont pas
+// exhaustives), point du captage ou PPR/PPI à 40 % au moins dans l'AAC
+// (recroisement géographique, à 2,5 km au plus ; captages en eau de surface seulement pour
+// une AAC de prise d'eau de surface), et en dernier recours le seul captage à
 // moins de 100 m du bord de l'AAC (`proximite`). Chaque lien porte sa source
 // (`source_rattachement`) et `lien_sur`.
 //
@@ -668,8 +714,11 @@ for (const [cdaac, aac] of aacMap) {
   const nbParcelles = rpg.reduce((s, r) => s + (r.nb_aac || 0), 0)
   const nbBio = bio?.nb ?? 0
   const totalBioM2 = bio?.surf_m2 ?? 0
+  // Captages actifs d'eau potable : un captage actif rattaché par recroisement
+  // mais à part (autre usage, ou usage AEP abandonné) n'est pas compté, pour
+  // que le nombre corresponde à la liste principale des installations.
   const nbCaptagesActifs = captages.filter(
-    (c) => c.t1_ins_etat_lib?.toUpperCase() === 'ACTIF'
+    (c) => c.t1_ins_etat_lib?.toUpperCase() === 'ACTIF' && (c.lien_sur || !motifAPart(c))
   ).length
 
   const installations = buildInstallations(captages, estPrioritairePour(cdaac))
